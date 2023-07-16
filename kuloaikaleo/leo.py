@@ -1,5 +1,4 @@
 import numpy as np
-import pyttsx3
 from pyttsx3 import speak
 import os
 import time
@@ -12,6 +11,8 @@ from scipy.io.wavfile import write
 from dotenv import load_dotenv
 import signal
 import threading
+from pydub import AudioSegment
+
 
 load_dotenv()
 
@@ -19,7 +20,7 @@ load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # Set the OpenAI model you want to use
-model_id = "gpt-3.5-turbo"
+model_id = "gpt-4"
 
 # Define the key for starting/stopping recording
 record_key = "a"
@@ -36,6 +37,13 @@ The text is coming from a rudimentary speech-to-text engine.
 The engine is not very accurate and makes many mistakes.
 You may have to make some pretty big corrections that involve logical leaps based on the sound of the words.
 You are very good at this and can make these corrections easily.
+You listen to meta-comments from the doctor and adjust the text accordingly.
+Meta-comments are comments about the text itself including, "meta" comments, "correction" and "quote".
+Meta-comments should be used to correct the text but should not be included in the patient's medical history.
+When dealing with a meta-comment `correction`, denote changes using `<old>...</old><correction>...</correction>`
+When dealing with a meta-comment `quote`, denote changes using \"...\"
+when dealing with a meta-comment `meta`, make the changes inplace (i.e. do not include the meta-comment or original text, only your updated phrasing).
+Mark text that is grossly incorrect, non-sensical or has possible medical dangers as `<caution>...<caution><best-practice>...<best-practice>`.
 """
 
 user_description_prompt = """
@@ -43,11 +51,9 @@ I am a psychiatrist.
 I am dictating a patient's medical history.
 I need you to correct the transcription of the patient's medical history.
 I will now provide the dictation as text from the speech-to-text engine and you will correct it.
-When I say "correction", the correction is to the chart should not be included in the patient's medical history.
-Similarly, when I say "quote", I want the text to be quoted in the patient's medical history.
-
-Please automatically apply correct formatting and punctuation to the text.
-Please mark any corrections you make with  "<old>...</old><correction>...</correction>" in cases where the original text is grossly incorrect, non-sensical or may be medically dangerous.
+It is very important that quotes are exactly as I say them.
+Please use quotes to denote quotes, do not include the words "quote" or "end quote" unless they are a part of the quote itself. 
+Please automatically apply standard medical chart formatting.
 """
 
 
@@ -86,7 +92,27 @@ class AudioRecorder:
         time.sleep(0.5)
 
     def process_recording(self):
-        with open("output.wav", "rb") as f:
+        # Concatenate the blocks of audio data
+        data = np.concatenate(self.recording).flatten()
+        # Save the data to .wav file
+        write("output.wav", self.fs, data)
+
+        # Convert the .wav file to .mp3 to reduce the file size
+        audio = AudioSegment.from_wav("output.wav")
+        audio.export("output.mp3", format="mp3")
+
+        # Split the .mp3 file into 10-minute chunks
+        audio = AudioSegment.from_mp3("output.mp3")
+        chunk_length = 10 * 60 * 1000  # 10 minutes in milliseconds
+        chunks = [
+            audio[i : i + chunk_length] for i in range(0, len(audio), chunk_length)
+        ]
+        for i, chunk in enumerate(chunks):
+            chunk.export(f"output_{i}.mp3", format="mp3")
+            self.transcribe_and_respond(f"output_{i}.mp3")
+
+    def transcribe_and_respond(self, file_name):
+        with open(file_name, "rb") as f:
             transcript = openai.Audio.transcribe("whisper-1", f)
         logger.info(f"Transcript: {transcript['text']}")
         self.generate_response(transcript["text"])
@@ -100,8 +126,10 @@ class AudioRecorder:
                     "content": transcription_prompt,
                 },
                 {"role": "user", "content": user_description_prompt},
-                {"role": "user", "content": text},
+                {"role": "user", "content": f"Trascription of audio: '{text}'"},
             ],
+            max_tokens=1000,
+            temperature=0.1,
         )
         response_text = response["choices"][0]["message"]["content"]
         logger.info(f"Response: {response_text}")

@@ -6,3 +6,4 @@ sounddevice
 openai
 python-dotenv
 scipy
+pydub
