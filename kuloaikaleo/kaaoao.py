@@ -2,8 +2,12 @@ import openai
 import os
 from dotenv import load_dotenv
 from loguru import logger
-from pyttsx3 import speak
-import threading
+from gtts import gTTS
+from pygame import mixer
+from pydub import AudioSegment
+
+
+mixer.init()
 
 load_dotenv()
 
@@ -43,6 +47,14 @@ Please automatically apply standard medical chart formatting.
 """
 
 
+def speed_up_audio(filename, speed=2):
+    if speed == 1:
+        return
+    sound = AudioSegment.from_file(filename)
+    sound_with_altered_speed = sound.speedup(playback_speed=speed)
+    sound_with_altered_speed.export(filename, format="mp3")
+
+
 class Transcriber:
     def __init__(self):
         pass
@@ -75,9 +87,18 @@ class Transcriber:
         response_text = response["choices"][0]["message"]["content"]
         logger.info(f"Response: {response_text}")
         try:
-            speaker_thread = threading.Thread(target=speak, args=(response_text,))
-            speaker_thread.daemon = True
-            speaker_thread.start()
+            tts = gTTS(text=response_text, lang="en-gb")
+            tts.save("response.mp3")
+            speed_up_audio("response.mp3", speed=1.5)
+            mixer.music.load("response.mp3")
+            mixer.music.play()
+            import time
+
+            while mixer.music.get_busy():
+                time.sleep(0.1)
+
+            # Unload the current music
+            mixer.music.unload()
         except Exception as e:
             logger.error(f"Error with text-to-speech engine: {e}")
         logger.info("Response spoken.")

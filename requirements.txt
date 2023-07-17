@@ -1,9 +1,10 @@
 numpy
 keyboard
-pyttsx3
 loguru
 sounddevice
 openai
 python-dotenv
 scipy
 pydub
+pygame
+gTTS
