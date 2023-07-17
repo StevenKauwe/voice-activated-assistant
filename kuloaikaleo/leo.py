@@ -1,60 +1,8 @@
 import numpy as np
-from pyttsx3 import speak
-import os
-import time
-from loguru import logger
 import sounddevice as sd
-import concurrent.futures
-import openai
-import keyboard
 from scipy.io.wavfile import write
-from dotenv import load_dotenv
-import signal
-import threading
 from pydub import AudioSegment
-
-
-load_dotenv()
-
-# Set your OpenAI API Key
-openai.api_key = os.getenv("OPENAI_API_KEY")
-
-# Set the OpenAI model you want to use
-model_id = "gpt-4"
-
-# Define the key for starting/stopping recording
-record_key = "a"
-
-transcription_prompt = """
-You are a helpful medical transcription corrector.
-You are helping a doctor transcribe a patient's medical history.
-The doctor is dictating the patient's medical history to you.
-The audio is transcribed into text.
-The text is then sent to you for correction.
-You correct the text and send it back to the doctor.
-You use context to assume corrections to the written text.
-The text is coming from a rudimentary speech-to-text engine.
-The engine is not very accurate and makes many mistakes.
-You may have to make some pretty big corrections that involve logical leaps based on the sound of the words.
-You are very good at this and can make these corrections easily.
-You listen to meta-comments from the doctor and adjust the text accordingly.
-Meta-comments are comments about the text itself including, "meta" comments, "correction" and "quote".
-Meta-comments should be used to correct the text but should not be included in the patient's medical history.
-When dealing with a meta-comment `correction`, denote changes using `<old>...</old><correction>...</correction>`
-When dealing with a meta-comment `quote`, denote changes using \"...\"
-when dealing with a meta-comment `meta`, make the changes inplace (i.e. do not include the meta-comment or original text, only your updated phrasing).
-Mark text that is grossly incorrect, non-sensical or has possible medical dangers as `<caution>...<caution><best-practice>...<best-practice>`.
-"""
-
-user_description_prompt = """
-I am a psychiatrist.
-I am dictating a patient's medical history.
-I need you to correct the transcription of the patient's medical history.
-I will now provide the dictation as text from the speech-to-text engine and you will correct it.
-It is very important that quotes are exactly as I say them.
-Please use quotes to denote quotes, do not include the words "quote" or "end quote" unless they are a part of the quote itself. 
-Please automatically apply standard medical chart formatting.
-"""
+from loguru import logger
 
 
 class AudioRecorder:
@@ -78,89 +26,20 @@ class AudioRecorder:
         self.recording = []
         self.stream.start()
         logger.info("Recording started...")
-        time.sleep(0.5)
 
     def stop_recording(self):
         self.is_recording = False
         self.stream.stop()
         logger.info("Recording stopped. Processing...")
-        # Concatenate the blocks of audio data
-        data = np.concatenate(self.recording).flatten()
-        # Save the data to .wav file
-        write("output.wav", self.fs, data)
-        self.process_recording()
-        time.sleep(0.5)
+        return self.process_recording()
 
     def process_recording(self):
-        # Concatenate the blocks of audio data
         data = np.concatenate(self.recording).flatten()
-        # Save the data to .wav file
         write("output.wav", self.fs, data)
-
-        # Convert the .wav file to .mp3 to reduce the file size
         audio = AudioSegment.from_wav("output.wav")
         audio.export("output.mp3", format="mp3")
-
-        # Split the .mp3 file into 10-minute chunks
-        audio = AudioSegment.from_mp3("output.mp3")
         chunk_length = 10 * 60 * 1000  # 10 minutes in milliseconds
         chunks = [
             audio[i : i + chunk_length] for i in range(0, len(audio), chunk_length)
         ]
-        for i, chunk in enumerate(chunks):
-            chunk.export(f"output_{i}.mp3", format="mp3")
-            self.transcribe_and_respond(f"output_{i}.mp3")
-
-    def transcribe_and_respond(self, file_name):
-        with open(file_name, "rb") as f:
-            transcript = openai.Audio.transcribe("whisper-1", f)
-        logger.info(f"Transcript: {transcript['text']}")
-        self.generate_response(transcript["text"])
-
-    def generate_response(self, text):
-        response = openai.ChatCompletion.create(
-            model=model_id,
-            messages=[
-                {
-                    "role": "system",
-                    "content": transcription_prompt,
-                },
-                {"role": "user", "content": user_description_prompt},
-                {"role": "user", "content": f"Trascription of audio: '{text}'"},
-            ],
-            max_tokens=1000,
-            temperature=0.1,
-        )
-        response_text = response["choices"][0]["message"]["content"]
-        logger.info(f"Response: {response_text}")
-        try:
-            speaker_thread = threading.Thread(target=speak, args=(response_text,))
-            speaker_thread.daemon = True
-            speaker_thread.start()
-        except Exception as e:
-            logger.error(f"Error with text-to-speech engine: {e}")
-        logger.info("Response spoken.")
-
-
-def main():
-    os.system("cls" if os.name == "nt" else "clear")  # Clear console
-    recorder = AudioRecorder()
-    while True:  # Keep the program running
-        if keyboard.is_pressed(record_key):  # if key 'a' is pressed
-            if not recorder.is_recording:
-                recorder.start_recording()
-            else:
-                recorder.stop_recording()
-        if keyboard.is_pressed("esc"):  # if key 'esc' is pressed
-            logger.info("Exiting...")
-            exit()
-
-
-if __name__ == "__main__":
-    # Handle termination signals
-    signal.signal(signal.SIGTERM, lambda signum, frame: exit())
-    signal.signal(signal.SIGINT, lambda signum, frame: exit())
-    # Run the main function in a separate thread
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        future = executor.submit(main)
-        future.result()
+        return chunks
