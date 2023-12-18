@@ -7,4 +7,4 @@ python-dotenv
 scipy
 pydub
 pygame
-gTTS
+pyautogui

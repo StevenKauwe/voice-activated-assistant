@@ -1,18 +1,19 @@
-import keyboard
-import signal
 import concurrent.futures
-from loguru import logger
-from .leo import AudioRecorder
-from .kaaoao import Transcriber
-
+import signal
 import time
+
+import config
+import keyboard
+from kaaoao import Transcriber
+from leo import AudioRecorder
+from loguru import logger
 
 
 def main():
     recorder = AudioRecorder()
     transcriber = Transcriber()
     while True:
-        if keyboard.is_pressed("a"):
+        if keyboard.is_pressed(config.ACTIVATION_KEYS):
             if not recorder.is_recording:
                 recorder.start_recording()
                 time.sleep(0.15)  # Add a small delay

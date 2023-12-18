@@ -1,8 +1,8 @@
 import numpy as np
 import sounddevice as sd
-from scipy.io.wavfile import write
-from pydub import AudioSegment
 from loguru import logger
+from pydub import AudioSegment
+from scipy.io.wavfile import write
 
 
 class AudioRecorder:
@@ -42,4 +42,6 @@ class AudioRecorder:
         chunks = [
             audio[i : i + chunk_length] for i in range(0, len(audio), chunk_length)
         ]
+        if len(chunks) > 1:
+            raise Exception("Audio too long. Please record less than 10 minutes.")
         return chunks
