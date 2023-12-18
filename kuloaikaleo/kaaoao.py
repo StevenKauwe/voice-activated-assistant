@@ -55,7 +55,6 @@ class Transcriber:
                         "role": "system",
                         "content": config.TRANSCRIPTION_PREPROMPT,
                     },
-                    # {"role": "user", "content": user_description_prompt},
                     {"role": "user", "content": f"Trascription of audio: '{text}'"},
                 ],
                 max_tokens=1000,
