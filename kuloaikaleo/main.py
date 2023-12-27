@@ -18,7 +18,7 @@ def toggle_recording(recorder, transcriber):
             else:
                 chunks = recorder.stop_recording()
                 transcriber.transcribe_and_respond(chunks)
-        if keyboard.is_pressed(config.EXIT_KEY):
+        if keyboard.is_pressed(config.EXIT_KEYS):
             logger.info("Exiting...")
             exit()
 
@@ -38,9 +38,9 @@ def continuous_recording_while_held(recorder, transcriber):
                 logger.info("Stopping recording...")
                 chunks = recorder.stop_recording()
                 transcriber.transcribe_and_respond(chunks)
+                logger.warning(f"press `{config.EXIT_KEYS}` to kill program")
 
-        if keyboard.is_pressed(config.EXIT_KEY):
-            logger.info(f"press {config.EXIT_KEY} to stop recording")
+        if keyboard.is_pressed(config.EXIT_KEYS):
             logger.info("Exiting...")
             exit()
 
@@ -58,10 +58,10 @@ def main():
 def run():
     logger.info("Starting...")
     if config.HOLD_TO_TALK:
-        logger.info(f"Hold {config.ACTIVATION_KEYS} and speak for STT")
+        logger.info("Loading Local Model... Please wait.")
     else:
         logger.info(
-            f"Press {config.ACTIVATION_KEYS} to start recording and {config.ACTIVATION_KEYS} to stop"
+            f"Press `{config.ACTIVATION_KEYS}` to start recording and `{config.ACTIVATION_KEYS}` to stop"
         )
     signal.signal(signal.SIGTERM, lambda signum, frame: exit())
     signal.signal(signal.SIGINT, lambda signum, frame: exit())

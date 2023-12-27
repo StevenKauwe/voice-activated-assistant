@@ -1,5 +1,7 @@
+from dataclasses import dataclass
+
 ACTIVATION_KEYS = "ctrl+alt+space"
-EXIT_KEY = "esc"
+EXIT_KEYS = "ctrl+alt+s"
 MAX_RECORDING_LENGTH = 10 * 60 * 1000  # 10 minutes in milliseconds
 MODEL_ID = "gpt-4-1106-preview"
 
@@ -8,6 +10,9 @@ HOLD_TO_TALK = True
 USE_SPEECH_TO_TEXT = True
 USE_GPT_POST_PROCESSING = False
 USE_SPOKEN_RESPONSE = False
+
+LOCAL = True
+LANGUAGE = "en"
 
 
 TRANSCRIPTION_PREPROMPT = """
@@ -22,3 +27,28 @@ You should also have docstrings and, if necessary to explain WHY something is do
 We use numpydoc style docstrings.
 
 """
+
+PRINT_TO_TERMINAL = True
+
+
+@dataclass
+class ApiOptions:
+    model: str = "whisper-1"
+    language: str = None
+    temperature: float = 0.0
+    initial_prompt: str = None
+
+
+@dataclass
+class ModelOptions:
+    model: str = "base"
+    device: str = None
+    language: str = None
+    temperature: float = 0.0
+    initial_prompt: str = None
+    condition_on_previous_text: bool = True
+    verbose: bool = False
+
+
+ApiOptions = ApiOptions()
+ModelOptions = ModelOptions()

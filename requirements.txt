@@ -8,3 +8,10 @@ scipy
 pydub
 pygame
 pyautogui
+openai-whisper
+huggingface_hub
+
+# If using local model
+--index-url https://download.pytorch.org/whl/cu121
+torch
+torchaudio

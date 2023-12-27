@@ -2,7 +2,9 @@ from pathlib import Path
 
 import config
 import pyautogui
+import whisper
 from dotenv import load_dotenv
+from huggingface_hub import hf_hub_download
 from loguru import logger
 from openai import OpenAI
 from pydub import AudioSegment
@@ -12,9 +14,40 @@ mixer.init()
 
 load_dotenv()
 
-openai_client = OpenAI(api_key="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")
-model_id = "gpt-4-1106-preview"
-use_gpt = False
+
+def example_waveform():
+    import math
+
+    import torch
+
+    # Parameters for the waveform
+    sample_rate = 16000  # Sampling rate in Hz
+    duration = 1.0  # Duration in seconds
+    frequency = 440.0  # Frequency of the sine wave in Hz (A4 note)
+
+    # Generate time values
+    t = torch.linspace(0, duration, int(sample_rate * duration))
+
+    # Generate the sine wave
+    waveform = torch.sin(2 * math.pi * frequency * t)
+    return waveform
+
+
+def init_client():
+    openai_client = OpenAI(
+        api_key="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"
+    )
+    return openai_client
+
+
+def init_local_model():
+    distil_model = hf_hub_download(
+        repo_id="distil-whisper/distil-medium.en", filename="original-model.bin"
+    )
+    model = whisper.load_model(distil_model, device="cuda")
+
+    _ = model.transcribe(example_waveform())
+    return model
 
 
 def speed_up_audio(filename, speed=2):
@@ -25,9 +58,42 @@ def speed_up_audio(filename, speed=2):
     sound_with_altered_speed.export(filename, format="mp3")
 
 
+class STT:
+    def __init__(self, local=True):
+        self.local = local
+        if self.local:
+            self.model = init_local_model()
+        else:
+            self.client = init_client()
+
+    def transcribe(
+        self,
+        audio_file: str,
+    ):
+        if self.local:
+            transcript = self.model.transcribe(
+                audio=audio_file,
+                language=config.LANGUAGE,
+                verbose=config.ModelOptions.verbose,
+                initial_prompt=config.ModelOptions.initial_prompt,
+                condition_on_previous_text=config.ModelOptions.condition_on_previous_text,
+                temperature=config.ModelOptions.temperature,
+            )
+            transcript_text = transcript["text"]
+        else:
+            with open(audio_file, "rb") as f:
+                transcript = self.client.audio.transcriptions.create(
+                    model="whisper-1", file=f
+                )
+                transcript_text = transcript.text
+
+        return transcript_text.strip()
+
+
 class Transcriber:
     def __init__(self):
-        pass
+        self.stt = STT(local=config.LOCAL)
+        logger.info(f"Hold {config.ACTIVATION_KEYS} and speak for STT")
 
     def transcribe_and_respond(self, chunks):
         for i, chunk in enumerate(chunks):
@@ -35,11 +101,9 @@ class Transcriber:
             self._transcribe_and_respond(f"output_{i}.mp3")
 
     def _transcribe_and_respond(self, file_name):
-        with open(file_name, "rb") as f:
-            transcript = openai_client.audio.transcriptions.create(
-                model="whisper-1", file=f
-            )
-        transcript_text = transcript.text
+        transcript_text = self.stt.transcribe(
+            audio_file=file_name,
+        )
         logger.info(f"Transcript: {transcript_text}")
         self._generate_response(transcript_text)
 
