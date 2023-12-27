@@ -10,8 +10,7 @@ pygame
 pyautogui
 openai-whisper
 huggingface_hub
-
-# If using local model
---index-url https://download.pytorch.org/whl/cu121
-torch
+transformers
+torch --index-url https://download.pytorch.org/whl/cu121
 torchaudio
+accelerate

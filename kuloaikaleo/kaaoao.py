@@ -4,9 +4,7 @@ from pathlib import Path
 import config
 import pyautogui
 import torch
-import whisper
 from dotenv import load_dotenv
-from huggingface_hub import hf_hub_download
 from loguru import logger
 from openai import OpenAI
 from pydub import AudioSegment
@@ -39,13 +37,35 @@ def init_client():
 
 
 def init_local_model():
-    distil_model = hf_hub_download(
-        repo_id="distil-whisper/distil-medium.en", filename="original-model.bin"
-    )
-    model = whisper.load_model(distil_model, device="cuda")
+    import torch
+    from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 
-    _ = model.transcribe(example_waveform())
-    return model
+    device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
+
+    # model_id = "distil-whisper/distil-large-v2"
+    model_id = "distil-whisper/distil-medium.en"
+
+    model = AutoModelForSpeechSeq2Seq.from_pretrained(
+        model_id, torch_dtype=torch_dtype, low_cpu_mem_usage=True, use_safetensors=True
+    )
+    model.to(device)
+
+    processor = AutoProcessor.from_pretrained(model_id)
+
+    pipe = pipeline(
+        "automatic-speech-recognition",
+        model=model,
+        tokenizer=processor.tokenizer,
+        feature_extractor=processor.feature_extractor,
+        max_new_tokens=128,
+        chunk_length_s=15,
+        batch_size=16,
+        torch_dtype=torch_dtype,
+        device=device,
+    )
+
+    return pipe
 
 
 def speed_up_audio(filename, speed=2):
@@ -69,14 +89,7 @@ class STT:
         audio_file: str,
     ):
         if self.local:
-            transcript = self.model.transcribe(
-                audio=audio_file,
-                language=config.LANGUAGE,
-                verbose=config.ModelOptions.verbose,
-                initial_prompt=config.ModelOptions.initial_prompt,
-                condition_on_previous_text=config.ModelOptions.condition_on_previous_text,
-                temperature=config.ModelOptions.temperature,
-            )
+            transcript = self.model(inputs=audio_file)
             transcript_text = transcript["text"]
         else:
             with open(audio_file, "rb") as f:
