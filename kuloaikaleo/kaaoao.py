@@ -1,4 +1,5 @@
 import math
+import time
 from pathlib import Path
 
 import config
@@ -9,6 +10,7 @@ from loguru import logger
 from openai import OpenAI
 from pydub import AudioSegment
 from pygame import mixer
+from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 
 mixer.init()
 
@@ -25,7 +27,7 @@ def example_waveform():
     t = torch.linspace(0, duration, int(sample_rate * duration))
 
     # Generate the sine wave
-    waveform = torch.sin(2 * math.pi * frequency * t)
+    waveform = torch.sin(2 * math.pi * frequency * t).numpy()
     return waveform
 
 
@@ -37,14 +39,14 @@ def init_client():
 
 
 def init_local_model():
-    import torch
-    from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
-
+    start_time = time.time()
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
     torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
 
-    # model_id = "distil-whisper/distil-large-v2"
-    model_id = "distil-whisper/distil-medium.en"
+    model_id = "distil-whisper/distil-large-v2"
+    # model_id = "distil-whisper/distil-medium.en"
+
+    logger.info(f"Loading model: {model_id} on device: {device}")
 
     model = AutoModelForSpeechSeq2Seq.from_pretrained(
         model_id, torch_dtype=torch_dtype, low_cpu_mem_usage=True, use_safetensors=True
@@ -64,7 +66,15 @@ def init_local_model():
         torch_dtype=torch_dtype,
         device=device,
     )
+    logger.debug(f"Testing model on example waveform: {example_waveform()}")
+    test_transcript = pipe(example_waveform())
+    assert isinstance(
+        test_transcript["text"], str
+    ), "Model failed to transcribe test waveform"
 
+    logger.info(
+        f"Loaded speech to text model in {time.time() - start_time:0.2f} seconds"
+    )
     return pipe
 
 

@@ -57,9 +57,7 @@ def main():
 
 def run():
     logger.info("Starting...")
-    if config.HOLD_TO_TALK:
-        logger.info("Loading Local Model... Please wait.")
-    else:
+    if not config.HOLD_TO_TALK:
         logger.info(
             f"Press `{config.ACTIVATION_KEYS}` to start recording and `{config.ACTIVATION_KEYS}` to stop"
         )
