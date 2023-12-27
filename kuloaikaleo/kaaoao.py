@@ -1,7 +1,9 @@
+import math
 from pathlib import Path
 
 import config
 import pyautogui
+import torch
 import whisper
 from dotenv import load_dotenv
 from huggingface_hub import hf_hub_download
@@ -16,10 +18,6 @@ load_dotenv()
 
 
 def example_waveform():
-    import math
-
-    import torch
-
     # Parameters for the waveform
     sample_rate = 16000  # Sampling rate in Hz
     duration = 1.0  # Duration in seconds
@@ -53,7 +51,7 @@ def init_local_model():
 def speed_up_audio(filename, speed=2):
     if speed == 1:
         return
-    sound = AudioSegment.from_file(filename)
+    sound: AudioSegment = AudioSegment.from_file(filename)
     sound_with_altered_speed = sound.speedup(playback_speed=speed)
     sound_with_altered_speed.export(filename, format="mp3")
 
@@ -93,25 +91,26 @@ class STT:
 class Transcriber:
     def __init__(self):
         self.stt = STT(local=config.LOCAL)
-        logger.info(f"Hold {config.ACTIVATION_KEYS} and speak for STT")
+        logger.info(f"Hold `{config.ACTIVATION_KEYS}` and speak for STT")
 
-    def transcribe_and_respond(self, chunks):
+    def transcribe_and_respond(self, chunks: list[AudioSegment]):
         for i, chunk in enumerate(chunks):
             chunk.export(f"output_{i}.mp3", format="mp3")
             self._transcribe_and_respond(f"output_{i}.mp3")
 
-    def _transcribe_and_respond(self, file_name):
+    def _transcribe_and_respond(self, file_name: str):
         transcript_text = self.stt.transcribe(
             audio_file=file_name,
         )
         logger.info(f"Transcript: {transcript_text}")
         self._generate_response(transcript_text)
 
-    def _generate_response(self, text):
+    def _generate_response(self, text: str):
         if config.USE_SPEECH_TO_TEXT:
             pyautogui.write(text, interval=0.005)
 
         if config.USE_GPT_POST_PROCESSING:
+            openai_client = init_client()
             response = openai_client.chat.completions.create(
                 model=config.MODEL_ID,
                 messages=[
@@ -132,8 +131,9 @@ class Transcriber:
         if config.USE_SPOKEN_RESPONSE:
             self._speak_response(response_text)
 
-    def _speak_response(self, response_text):
+    def _speak_response(self, response_text: str):
         try:
+            openai_client = init_client()
             speech_file_path = Path(__file__).parent / "response.mp3"
             response = openai_client.audio.speech.create(
                 model="tts-1",
