@@ -9,9 +9,7 @@ from leo import AudioRecorder
 from loguru import logger
 
 
-def main():
-    recorder = AudioRecorder()
-    transcriber = Transcriber()
+def toggle_recording(recorder, transcriber):
     while True:
         if keyboard.is_pressed(config.ACTIVATION_KEYS):
             if not recorder.is_recording:
@@ -20,12 +18,51 @@ def main():
             else:
                 chunks = recorder.stop_recording()
                 transcriber.transcribe_and_respond(chunks)
-        if keyboard.is_pressed("esc"):
+        if keyboard.is_pressed(config.EXIT_KEY):
             logger.info("Exiting...")
             exit()
 
 
+def continuous_recording_while_held(recorder, transcriber):
+    while True:
+        if keyboard.is_pressed(config.ACTIVATION_KEYS):
+            if not recorder.is_recording:
+                logger.info("Starting recording...")
+                recorder.start_recording()
+
+            while keyboard.is_pressed(config.ACTIVATION_KEYS):
+                # Keep recording as long as the key is pressed
+                time.sleep(0.1)  # Small delay to prevent high CPU usage
+
+            if recorder.is_recording:
+                logger.info("Stopping recording...")
+                chunks = recorder.stop_recording()
+                transcriber.transcribe_and_respond(chunks)
+
+        if keyboard.is_pressed(config.EXIT_KEY):
+            logger.info(f"press {config.EXIT_KEY} to stop recording")
+            logger.info("Exiting...")
+            exit()
+
+
+def main():
+    recorder = AudioRecorder()
+    transcriber = Transcriber()
+
+    if config.HOLD_TO_TALK:
+        continuous_recording_while_held(recorder=recorder, transcriber=transcriber)
+    else:
+        toggle_recording(recorder=recorder, transcriber=transcriber)
+
+
 def run():
+    logger.info("Starting...")
+    if config.HOLD_TO_TALK:
+        logger.info(f"Hold {config.ACTIVATION_KEYS} and speak for STT")
+    else:
+        logger.info(
+            f"Press {config.ACTIVATION_KEYS} to start recording and {config.ACTIVATION_KEYS} to stop"
+        )
     signal.signal(signal.SIGTERM, lambda signum, frame: exit())
     signal.signal(signal.SIGINT, lambda signum, frame: exit())
     with concurrent.futures.ThreadPoolExecutor() as executor:

@@ -1,11 +1,13 @@
 ACTIVATION_KEYS = "ctrl+alt+space"
+EXIT_KEY = "esc"
 MAX_RECORDING_LENGTH = 10 * 60 * 1000  # 10 minutes in milliseconds
 MODEL_ID = "gpt-4-1106-preview"
 
+HOLD_TO_TALK = True
 
 USE_SPEECH_TO_TEXT = True
 USE_GPT_POST_PROCESSING = False
-USE_SPOKEN_RESPONSE = True
+USE_SPOKEN_RESPONSE = False
 
 
 TRANSCRIPTION_PREPROMPT = """
