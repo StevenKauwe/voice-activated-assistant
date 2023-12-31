@@ -10,14 +10,27 @@ from loguru import logger
 
 
 def toggle_recording(recorder, transcriber):
+    start_time = None
     while True:
+        if start_time is not None:
+            time_delta = time.time() - start_time
+            if time_delta > config.TIMEOUT:
+                logger.info("Timeout reached, exiting...")
+                chunks = recorder.stop_recording()
+                config.USE_SPEECH_TO_TEXT = False
+                transcriber.transcribe_and_respond(chunks)
+                start_time = None
+
         if keyboard.is_pressed(config.ACTIVATION_KEYS):
             if not recorder.is_recording:
+                start_time = time.time()
                 recorder.start_recording()
                 time.sleep(0.15)  # Add a small delay
             else:
                 chunks = recorder.stop_recording()
                 transcriber.transcribe_and_respond(chunks)
+                start_time = None
+
         if keyboard.is_pressed(config.EXIT_KEYS):
             logger.info("Exiting...")
             exit()
@@ -50,17 +63,17 @@ def main():
     transcriber = Transcriber()
 
     if config.HOLD_TO_TALK:
+        logger.info(f"Hold `{config.ACTIVATION_KEYS}` and speak for STT")
         continuous_recording_while_held(recorder=recorder, transcriber=transcriber)
     else:
+        logger.info(
+            f"Press `{config.ACTIVATION_KEYS}` to start recording and `{config.ACTIVATION_KEYS}` to stop"
+        )
         toggle_recording(recorder=recorder, transcriber=transcriber)
 
 
 def run():
     logger.info("Starting...")
-    if not config.HOLD_TO_TALK:
-        logger.info(
-            f"Press `{config.ACTIVATION_KEYS}` to start recording and `{config.ACTIVATION_KEYS}` to stop"
-        )
     signal.signal(signal.SIGTERM, lambda signum, frame: exit())
     signal.signal(signal.SIGINT, lambda signum, frame: exit())
     with concurrent.futures.ThreadPoolExecutor() as executor:

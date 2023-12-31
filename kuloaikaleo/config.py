@@ -2,10 +2,11 @@ from dataclasses import dataclass
 
 ACTIVATION_KEYS = "ctrl+alt+space"
 EXIT_KEYS = "ctrl+alt+s"
-MAX_RECORDING_LENGTH = 10 * 60 * 1000  # 10 minutes in milliseconds
 MODEL_ID = "gpt-4-1106-preview"
 
-HOLD_TO_TALK = True
+# HOLD_TO_TALK = True
+HOLD_TO_TALK = False
+TIMEOUT = 60 * 60  # 1 hour
 
 USE_SPEECH_TO_TEXT = True
 USE_GPT_POST_PROCESSING = False

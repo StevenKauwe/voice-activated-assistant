@@ -1,5 +1,6 @@
 import math
 import time
+from datetime import datetime
 from pathlib import Path
 
 import config
@@ -51,7 +52,14 @@ def init_local_model():
     model = AutoModelForSpeechSeq2Seq.from_pretrained(
         model_id, torch_dtype=torch_dtype, low_cpu_mem_usage=True, use_safetensors=True
     )
+
+    logger.debug(
+        f"Model loaded: {model_id} on device: {device} time: {time.time() - start_time:0.2f} seconds"
+    )
+
     model.to(device)
+
+    logger.debug(f"Loadtime: {time.time() - start_time:0.2f} seconds")
 
     processor = AutoProcessor.from_pretrained(model_id)
 
@@ -114,7 +122,6 @@ class STT:
 class Transcriber:
     def __init__(self):
         self.stt = STT(local=config.LOCAL)
-        logger.info(f"Hold `{config.ACTIVATION_KEYS}` and speak for STT")
 
     def transcribe_and_respond(self, chunks: list[AudioSegment]):
         for i, chunk in enumerate(chunks):
@@ -129,6 +136,9 @@ class Transcriber:
         self._generate_response(transcript_text)
 
     def _generate_response(self, text: str):
+        with open("output.txt", "a") as f:
+            f.write(f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}:\n{text}\n")
+
         if config.USE_SPEECH_TO_TEXT:
             pyautogui.write(text, interval=0.005)
 
@@ -148,6 +158,10 @@ class Transcriber:
             )
             response_text = response.choices[0].message.content
             logger.info(f"Response: {response_text}")
+
+            with open("output.txt", "a") as f:
+                f.write(f"\nGPT output:{response_text}\n")
+
         else:
             response_text = text
 
