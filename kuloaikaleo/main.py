@@ -19,6 +19,7 @@ def toggle_recording(recorder: AudioRecorder, transcriber: Transcriber):
                 chunks = recorder.stop_recording()
                 config.USE_SPEECH_TO_TEXT = False
                 transcriber.transcribe_and_respond(chunks)
+                recorder.save_recording("output.mp3")
                 start_time = None
 
         if keyboard.is_pressed(config.ACTIVATION_KEYS):
@@ -29,6 +30,7 @@ def toggle_recording(recorder: AudioRecorder, transcriber: Transcriber):
             else:
                 chunks = recorder.stop_recording()
                 transcriber.transcribe_and_respond(chunks)
+                recorder.save_recording("output.mp3")
                 start_time = None
 
         if keyboard.is_pressed(config.EXIT_KEYS):
@@ -36,7 +38,7 @@ def toggle_recording(recorder: AudioRecorder, transcriber: Transcriber):
             exit()
 
 
-def continuous_recording_while_held(recorder, transcriber):
+def continuous_recording_while_held(recorder: AudioRecorder, transcriber: Transcriber):
     while True:
         if keyboard.is_pressed(config.ACTIVATION_KEYS):
             if not recorder.is_recording:
@@ -51,6 +53,7 @@ def continuous_recording_while_held(recorder, transcriber):
                 logger.info("Stopping recording...")
                 chunks = recorder.stop_recording()
                 transcriber.transcribe_and_respond(chunks)
+                recorder.save_recording("output.mp3")
                 logger.warning(f"press `{config.EXIT_KEYS}` to kill program")
 
         if keyboard.is_pressed(config.EXIT_KEYS):

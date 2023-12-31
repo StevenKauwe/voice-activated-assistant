@@ -127,9 +127,7 @@ class Transcriber:
         self.stt = STT(local=config.LOCAL)
 
     def transcribe_and_respond(self, chunks: list[AudioSegment]):
-        for i, chunk in enumerate(chunks):
-            chunk.export(f"output_{i}.mp3", format="mp3")
-            self._transcribe_and_respond(f"output_{i}.mp3")
+        self._transcribe_and_respond(chunks)
 
     def _transcribe_and_respond(self, file_name: str):
         transcript_text = self.stt.transcribe(

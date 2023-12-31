@@ -110,3 +110,96 @@ chunks and that we transcribe both chunks and I guess this is only useful if you
 
 2023-12-31 10:39:54:
 audio but why not. Just check it out right?
+
+2023-12-31 10:53:10:
+Pi Dub audio segment into a Pi Torch audio tensor. So I need that function to be written.
+
+2023-12-31 10:54:47:
+Oh, this is what?
+
+2023-12-31 10:54:57:
+So, um, the first of the school, the worst of the things.
+
+2023-12-31 10:56:30:
+I'm not sure.
+
+2023-12-31 10:57:37:
+you
+
+2023-12-31 10:57:38:
+Oh
+
+2023-12-31 10:57:43:
+Extracuse.
+
+2023-12-31 11:02:21:
+I'm not that.
+
+2023-12-31 11:09:21:
+B-
+
+2023-12-31 11:09:51:
+Oh
+
+2023-12-31 11:11:59:
+Okay, this might work, it also might be a disaster.
+
+2023-12-31 11:23:38:
+Well, hopefully this thing still works.
+
+2023-12-31 11:25:22:
+you
+
+2023-12-31 11:25:22:
+So
+
+2023-12-31 11:25:28:
+Oh, fuck.
+
+2023-12-31 11:25:34:
+I want to make sure this still works.
+
+2023-12-31 11:25:39:
+You got me saying, oh fuck.
+
+2023-12-31 13:21:06:
+So this starts the recording and I just get a talk and then when the recording is done and it's done.
+
+2023-12-31 13:23:38:
+Can you make a function, like a utility function that can be used to time methods and stuff for how long they're running? I'm going to use it in this class here, but in a couple other classes as well. Essentially I want to be able to use the guru logger, or logger, like logger, like logger dot pie debug. And then I'll have like a custom message like it took this amount of like the process blah blah blah or actually you could just use the method name like the method blah blah blah took this amount of time
+
+2023-12-31 13:24:48:
+Does this work with methods as well?
+
+2023-12-31 13:25:59:
+So what I'm interested in is of the things that take time, what things take the most time.
+
+2023-12-31 13:27:25:
+So the big question right now that I have is like, I'm transcribing. I will be transcribing for a long time. Let's say I talk about a whole minute. And in this minute, maybe I can say, just lots and lots and lots of stuff. The question is, is it the stuff going through the neural network? What takes forever? Or is it the part where we actually process the audio? Or is it both? And can we save time by changing how we process the audio or something of that nature because it looked like to me it looked like reading in the audio took almost no time at all in the process recording method, I have an output.Wave that's then converted to an MP3 and both of these things are written and then read back from disk, which is like, oh, probably bad. But if it's possible to just pass the data directly through, without doing any file readwrite, I'd be probably a lot faster.
+
+2023-12-31 13:31:45:
+Yeah.
+
+2023-12-31 13:34:26:
+Does this actually work? If this works, that's great.
+
+2023-12-31 13:40:13:
+So we're going to see if the recording gets saved as well.
+
+2023-12-31 13:41:42:
+So hopefully the recording gets saved.
+
+2023-12-31 13:44:24:
+ABC, testing, testing.
+
+2023-12-31 13:47:18:
+So ideally this gets saved.
+
+2023-12-31 13:50:09:
+Do you actually think what you've just written is an improvement over what we have?
+
+2023-12-31 13:50:56:
+How to turn off emergency alerts on iPhone 15?
+
+2023-12-31 13:56:50:
+Sweet, this looks like if it does save, then we're getting.
