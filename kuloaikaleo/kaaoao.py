@@ -1,10 +1,12 @@
-import math
 import time
 from datetime import datetime
 from pathlib import Path
+from typing import Union
 
 import config
+import numpy as np
 import pyautogui
+import pyperclip
 import torch
 from dotenv import load_dotenv
 from loguru import logger
@@ -12,24 +14,11 @@ from openai import OpenAI
 from pydub import AudioSegment
 from pygame import mixer
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
+from utils import example_waveform, load_text_file, speed_up_audio, timer_decorator
 
 mixer.init()
 
 load_dotenv()
-
-
-def example_waveform():
-    # Parameters for the waveform
-    sample_rate = 16000  # Sampling rate in Hz
-    duration = 1.0  # Duration in seconds
-    frequency = 440.0  # Frequency of the sine wave in Hz (A4 note)
-
-    # Generate time values
-    t = torch.linspace(0, duration, int(sample_rate * duration))
-
-    # Generate the sine wave
-    waveform = torch.sin(2 * math.pi * frequency * t).numpy()
-    return waveform
 
 
 def init_client():
@@ -89,14 +78,6 @@ def init_local_model():
     return pipe
 
 
-def speed_up_audio(filename, speed=2):
-    if speed == 1:
-        return
-    sound: AudioSegment = AudioSegment.from_file(filename)
-    sound_with_altered_speed = sound.speedup(playback_speed=speed)
-    sound_with_altered_speed.export(filename, format="mp3")
-
-
 class STT:
     def __init__(self, local=True):
         self.local = local
@@ -107,7 +88,7 @@ class STT:
 
     def transcribe(
         self,
-        audio_file: str,
+        audio_file: Union[str, np.ndarray],
     ):
         if self.local:
             transcript = self.model(inputs=audio_file)
@@ -126,12 +107,10 @@ class Transcriber:
     def __init__(self):
         self.stt = STT(local=config.LOCAL)
 
+    @timer_decorator
     def transcribe_and_respond(self, chunks: list[AudioSegment]):
-        self._transcribe_and_respond(chunks)
-
-    def _transcribe_and_respond(self, file_name: str):
         transcript_text = self.stt.transcribe(
-            audio_file=file_name,
+            audio_file=chunks,
         )
         logger.info(f"Transcript: {transcript_text}")
         self._generate_response(transcript_text)
@@ -140,9 +119,7 @@ class Transcriber:
         with open("output.txt", "a") as f:
             f.write(f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}:\n{text}\n")
 
-        if config.USE_SPEECH_TO_TEXT:
-            pyautogui.write(text, interval=0.0025)
-
+        response_text = text
         if config.USE_GPT_POST_PROCESSING:
             openai_client = init_client()
             response = openai_client.chat.completions.create(
@@ -150,7 +127,9 @@ class Transcriber:
                 messages=[
                     {
                         "role": "system",
-                        "content": config.TRANSCRIPTION_PREPROMPT,
+                        "content": config.TRANSCRIPTION_PREPROMPT
+                        + load_text_file("prompt.txt")
+                        + pyperclip.paste(),
                     },
                     {"role": "user", "content": f"Trascription of audio: '{text}'"},
                 ],
@@ -161,10 +140,12 @@ class Transcriber:
             logger.info(f"Response: {response_text}")
 
             with open("output.txt", "a") as f:
-                f.write(f"\nGPT output:{response_text}\n")
+                f.write(f"\nGPT output:\n{response_text}\n")
 
-        else:
-            response_text = text
+        if config.USE_SPEECH_TO_TEXT:
+            # pyautogui.write(response_text, interval=0.0025)
+            pyperclip.copy(response_text)
+            pyautogui.hotkey("ctrl", "v")
 
         if config.USE_SPOKEN_RESPONSE:
             self._speak_response(response_text)
