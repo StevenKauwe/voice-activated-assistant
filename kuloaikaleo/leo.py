@@ -27,21 +27,19 @@ class AudioRecorder:
         self.stream.start()
         logger.info("Recording started...")
 
-    def stop_recording(self):
+    def stop_recording(self) -> AudioSegment:
         self.is_recording = False
         self.stream.stop()
         logger.info("Recording stopped. Processing...")
         return self.process_recording()
 
-    def process_recording(self):
+    def process_recording(self) -> AudioSegment:
         data = np.concatenate(self.recording).flatten()
         write("output.wav", self.fs, data)
-        audio = AudioSegment.from_wav("output.wav")
+        audio: AudioSegment = AudioSegment.from_wav("output.wav")
         audio.export("output.mp3", format="mp3")
         chunk_length = 10 * 60 * 1000  # 10 minutes in milliseconds
         chunks = [
             audio[i : i + chunk_length] for i in range(0, len(audio), chunk_length)
         ]
-        if len(chunks) > 1:
-            raise Exception("Audio too long. Please record less than 10 minutes.")
         return chunks

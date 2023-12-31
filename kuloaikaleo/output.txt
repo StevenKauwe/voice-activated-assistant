@@ -1,0 +1,112 @@
+
+2023-12-29 08:11:32:
+And then I can record again, and then in 10 seconds, it'll stop.
+
+2023-12-29 08:14:45:
+Okay, so I have 10 seconds to talk. Then after the end of 10 seconds, I should be written out into that file.
+
+2023-12-29 08:17:17:
+Start the interview from scratch. You can use the same or different questions. This is just another technical interview on practice.
+
+2023-12-29 08:20:18:
+Adjust it so that your voice hits the 12 dB to the 6 dB range.
+
+2023-12-29 08:20:44:
+Yeah, okay, let's start our interview. Great. To get things on, would you tell me a bit about your most challenging project involved in GPT4 at Citrine and how you successfully navigated that challenge.
+
+2023-12-29 08:23:43:
+Yeah, so while I was at Citrine, I guess I'm here at Citrine, we have been able to get Azure access completely private to GPT4, which is a pretty awesome, you know, set up for someone who wants to implement generative AI tools, because GPT4 is naturally very powerful. So we're consuming an API right now and there's of course things to work with like rate limits, etc. But I think the big thing is like figuring out how do our customers interact with our platform? And given their interactions, how do we lower the barrier of entry? Make it frictionless or lower the friction so that the very difficult task they're working on can be simplified. And that's where I kind of stepped in and was asked, hey, let's use your expertise and your experience to figure out some proper applications. And if there's really a benefit, if there's, you know, this hype can actually be something that we take advantage of and make a useful product for our customers. So that's kind of, that was the starting place. Right now, there's a few things, a few unique situations. I'm not allowed to go into too much detail, but suffice to say, some of the applications we found ourselves building are pretty standard stuff because we have unique agreements with the customers we have, they are actually able to consume what we're able to offer them, which is pretty important. The other part of it is improving our specific platform itself. And that has come in the form of essentially codifying user workflows that have tricky aspects to them, you know, things that require specific knowledge or our platform, essentially things that can be taught in like a weekend or two-day workshop setting, but codifying those into a GPT framework and then allowing users to come in with their base knowledge and invoke the GPT tools. They can then do the more complex operations for them and then guide them through what the operation was, how it did it, and then ask them if it wanted to instantiate the steps it's proposed or if the user wants to go ahead and do it themselves.
+
+2023-12-29 08:24:24:
+use cases, student. Your focus on user experience and lowering the barrier to entry resonates deeply with the practical constraints like rate limits while keeping customer confidentiality in mind, shows your dedication to both innovation and security. Incorporating GECD and refined user workflows is an exciting venture and your approach to having it serve as both a tool and an educator is clever. It's exactly the kind of thinking and value in our projects. Thank you.
+
+2023-12-29 08:24:48:
+It's impressive to see someone so engaged with emerging technologies and their practical applications. Your work is laying the groundwork for easier and more intuitive user experiences. Keep it up, Stephen. If you're comfortable with it, I'd love to hear more about your aspirations and where you see yourself taking your technical expertise next.
+
+2023-12-29 08:27:14:
+I think the next step, you know, I want to continue on the I see the individual contributor journey for a while. As an engineer, I think I've grown a considerable amount the last couple years. And, you know, there's, I come from, I came from a PhD originally where I did a lot of work. I did some side consulting in data science with a couple companies. So I had like some pretty good experience, but it's a little different when every single day you have your shoulder to the wheel and you're pushing and trying to get you know the bigger picture of a corporation implemented. And there's something that I think is easy to miss, which is software's built minute by minute, hour by hour, day by day. It's an incremental process. And I found as an IC participating in that incremental process every day for years at this point is really like it causes a different type of growth than when you're doing more like the research aspect. And so as in, you know, as I continue my career, I think I do want maybe another three to five years working as an I.C. in a highly technical area where I'm producing state of the art software. But beyond that, once I have that solid foundation, I'm an educator at heart. I'm a, I like people. And I think transitioning into a role that is a bit more aligned with people managing and guiding and mentoring is probably where I would like to be once I have just that like deep innate knowledge of software and that I know many people say that like no matter how much you learn there's always more that infinite frontier. But I do think in the near term, continuing an IC path and just getting extremely good at that, polishing it up is where I want to be. And then helping the future generation.
+
+2023-12-29 08:27:59:
+active contribution to software development over time, hones a different quality of expertise is spot on. It's true, software is a tapestry woven over time with care and skill, your plan to deepen your technical prowess before transitioning into a mentorship and leadership role is both admirable and strategically sound. At Booz Allen Hamilton, we value that same kind of incremental growth and the long-term vision you're describing. Cultivating deep, hands-on experience positions you well to inspire and educate others down the line. Your passion for both technology and people is exactly what we look for in our leadership pipeline.
+
+2023-12-29 08:29:52:
+That's good to hear. Kind of along those lines. I thought maybe I could ask you some questions. And they're focused around growth, compensation, leveling, etc. I would love for this to not be a terminal position at Booz Allen if I offered the job and accept it. A big part of me has appreciated being at the two startups that I've worked at so far. But I'm kind of craving a bit more... I don't know if structure is the right word, but something that's less ephemeral. I would love to be on a path in my career where I feel like I can kind of hunker down, put my head down, and just grind out good work and know that as long as I'm still producing good work, the incentives for me and the company are aligned where I can grow, I can progress, I can become more senior, I can have more leadership opportunity. And I think that's one of the big kind of, like one of the big reasons I'm so interested in this position. Now my question to you is like current compensation I saw the the pay range is like that's that's fine, but what where does it go from here like where do I go from here given my aspirations?
+
+2023-12-29 08:30:51:
+for a pathway that offers stability and advancement. Here at Fuz Alley, growth and progression are integral to our culture. We provide a transparent trajectory for career development where your performance and contributions to the company's success directly influence your advancement and leadership opportunities. Regarding compensation, while specifics can vary, we offer competitive salaries reviewed annually, considering market rates, individual performance, and contribution to the firm. Internal promotions are a significant part of our culture. And with someone of your caliber and commitment to growth, you can certainly expect to advance through the levels and increase your skill of influence here. The alignment between personal contribution and company success is key in ensuring everyone moves together in the same direction upwards.
+
+2023-12-29 08:31:29:
+Yeah, I'm still here. Do you have any other questions for me?
+
+2023-12-29 08:31:44:
+Certainly. I'd love to know more about how you approach problem solving in complex tech environments. Can you describe a time when you encountered a seemingly insurmountable issue and how you navigated it?
+
+2023-12-29 08:37:21:
+A seemingly insurmountable issue. Yeah, I don't know if insurmountables, the exact word we want to, I'd want to use, but when GPT first hit the scene, chat GBT. The upper management, my company became very interested because this was the first time they had ever experienced, you know, kind of the progress of language models. And so I demoed for them some basic capabilities using GPT3 Da Vinci, just the API in regards to how we could provide some user benefits. One of the big ones was showing them ways to take a user's direct input and then restructure it into what our platform needs for onboarding data. And the big issue ended up being, from a security perspective, using an API like that provided through OpenAI was simply a non-starter. And at this point, the ability to communicate with OpenAI directly to get a fully private, sort of like HIPAA compliant endpoint was non-existent. So to kind of accommodate this and get over this we did a few things. First we went through a bunch of the open source models and demonstrated to leadership that although open source was a thing, they were not capable of the same type of cognitive tasks as these proprietary large models. This included grabbing things like the GPT Neo class,  at one point we hosted Bloom for a couple days which was a 173 billion parameter model. Not a good one by the way. Just to make sure and to test out some of the same workflows we envisioned including all the sort of feature engineering and prompt engineering involved there. But ultimately, the first step was to demonstrate, look, there is a very real value add with the tools provided by someone like OpenAI. Then the second step was to work with upper management to figure out who had connections and who might be able to open up doors for us at companies like Google, Microsoft, Anthropic, etc. And so, you know, kind of overcome this insurmountable obstacle of we need access to these proprietary models, but we need it in a very secure way that isn't provided, or at least not publicly. We showed that we did indeed need it, And then I showed, these are the companies whose benchmarks are good enough. That included Google Anthropic and Open AI. And I said, these are the programs where you can actually get full privacy guarantees. And that was Google's creator program and Azure's opening endpoints. And then I worked with upper management to figure out who do we know, who are we close with, they can open up these doors. And it ended up being that it was easy to get the Google Creative Program because one of our investors, someone on the board, had a close connection there. So working with my CEO, we were able to figure out, oh, you know, now that I've presented the creator program using BARD, might be sufficient. We were able to get that access by working through a channel we had a very good relationship with and we tested it out because we knew that one was going to work. And then when we found that the performance was good but not sufficient, we realized that we need to see if one of these other, you know, if one of the other companies we had any sort of communication. Again, I presented, hey, look, we know, we know that the API endpoints from Open AI are sufficient for our task. They are excellent. So I propose that we work particularly hard to get in contact or figure out who our contact is at Azure. And so again, I worked with my CEO and my VP of engineering and we reached out to a few people to figure out, okay, actually we do know someone at Azure. We established those relationships and at that point I passed it off to the VP of engineering who actually flew out personally to meet with someone at Azure and get us the approval we needed. And from there we've been building some awesome tools.
+
+2023-12-29 08:39:13:
+Let's have a discussion about compensation expectations. This will be a practice part, so you should lead it. For you, the functional range is between 130 and 212 for this role, and then you want to figure out what I am willing to allow, minimum.
+
+2023-12-29 08:45:33:
+Stephen, it's great that you're thinking about compensation. It reflects your understanding of the value you bring. Given your expertise with GPT4 and background in research engineering, you're positioned to be on the higher end of the ranch. However, it's essential we consider the entire package, including benefits and growth opportunities, not here? This is meta. I need you to pretend you're still interviewing me and now you're getting to the compensation part where you're going to ask me about my requirements. I've given you the range you're interested in, with a focus on integrating emerging AI  and I've tried to do a little bit of due diligence at Citrain. I have some pretty amazing benefits including things like unlimited vacation and staff that supports supports me taking that time and also things like paternity leave or 12 weeks instead of the six weeks at Buzhelen. And I am in a really good position over where I'm at right now. But that said, I'm extremely interested in moving over to Booz Allen. And so I think I'd be willing, or rather, maybe let's say this, anything below 209, I'd be a bit uncomfortable, but willing to talk and interest in joining us and appreciate your transparency on compensation. It sounds like you're well recognized at Citrine, and we aim to make our team members feel equally valued. Let's definitely explore how the full benefits package and career growth opportunities at Booz Allen could align's go ahead and try to improve it so it's a little bit more strong. In your response, you set out a clear baseline salary expectation that's at the top end of the range. To strengthen your stance, you could also articulate the unique contributions you would make to our team, based on your experience with GPT4 and AI integration. Highlight specific outcomes you've achieved at Citrin, emphasizing how these successes can translate to value at Booz Allen. It's compelling to tie your requested salary to the try again on my salary statement? Ask me again. Stephen, given your impressive background with GPT4 and AI integration, what are your compensation expectations for the role here at Booz Allen Hamilton in at the compensation range. Yeah, I definitely, there's, there's a lot of pros and cons to moving companies, but I think I'd be uncomfortable with anything less than 207, but definitely like willing to have discussions and conversation. It wouldn't be a game ending. your openness to dialogue. It's a good starting point that recognizes your work while leaving room for negotiation. We value a collaborative approach to ensure we're aligning with your career ambitions and the company's objectives. Let's move forward with these discussions and see how we say I'm willing to do 200 I'd be far more comfortable with like 207 and of course like anything above that like of course I, like most important to methe organization. You could say, I believe my skill set and experience warrant a starting salary at or above $207,000. While I'm flexible and open to discussion, it's vital for me to feel that my contributions are recognized and valued. I'm looking for a total compensation package that reflects that. This creates a firm but negotiable stance, Stephen, acknowledging your value while inviting continued conversation.
+
+2023-12-29 08:46:17:
+Absolutely, Steven. You might frame it like this
+ Taking into account my technical expertise and the value I anticipate bringing to Booz Allen Hamilton, I 
+ 
+  a base salary of $207,000 is appropriate. It's a figure that would align with my professional contributions and the standards I've set in my current role. 
+  I'm certainly open to discussing the broader compensation package as my ultimate goal is to ensure that my work is recognized and that the compensation reflects this recognition. 
+  This phrasing underscores your expectation.
+
+2023-12-29 08:54:05:
+Is this even faster?
+
+2023-12-29 09:01:30:
+Let's see, distilled housing paper, robust knowledge, distillation,illed large V2, a distilled variant of a dispersed for large V2. The model distilled large V2 has a relative latency of 5.8 and a short form of WR of 10.1, and a long form of WR of 11.5. 5.8 seems really bad. Bigger is better I guess. Distill Whisper is currently available for English. Speaking of recognition, we're working on the community for Distilister and other languages. If you're interested in distilling Whisper in your language language, check out for the training code distable, sorry for having phase transformers version, 3.5 onomers, from the model for system, this is the latest version of transformers libraries.
+
+2023-12-29 09:54:59:
+Okay, so this is start.
+
+2023-12-29 09:56:16:
+Does this require what we need?
+
+2023-12-29 09:57:02:
+Let's make sure this records okay.
+
+
+I would be uncomfortable with a base salary below $207,000 but I'm certainly open to discussing broader compensation. I want to make sure there is recognition of the skills passion and experience I can bring to the team.
+2023-12-31 10:09:58:
+you
+
+2023-12-31 10:10:03:
+Ideally, this is way faster.
+
+2023-12-31 10:10:58:
+So the idea here is that even if I do a huge amount of text and have just tons and tons and tons of conversation that this is just like way faster. And that using the accelerate module was enough to make it so that like even though there's a lot of text here and I'm talking a lot Essentially almost instantly it starts writing out all this text that I started talking about and like I should go for maybe like 40 seconds maybe even longer so I'm just gonna keep talking and get this all out so the idea here is like I need to make a to-do list, essentially, and you organize all of my thoughts. And I'll do that in a little while and essentially have a front end that does not interact with my back end in any way whatsoever, but front end and back end is so funny. Man, holy shit.
+
+2023-12-31 10:13:21:
+Okay, so the idea is this should be like instant.
+
+2023-12-31 10:16:07:
+Okay, so we're going to make a to-do list. You're going to help me. I'm just going to generally go through the code I have in my head, just speak out loud. And I'm just going to tell you the state of things, and you're going to help me organize my thoughts so I can systematically kind of cross off and check off all the needed things so that this kind of overwhelming task feels a lot less overwhelming. So here's where I'm at. I'm going to probably use the Fast API cookie cutter repo to have their kind of sponsored or patterned front end and back end. In the interim I'm trying to get as much business logic as I can written down so that when I move over I know what I'm doing, essentially like that second tries cleaner. But that's going to be like a month or two from now. So what I've done is I have a mostly functioning backend built on fast API with APIs that work. They don't support the full front-end UI experience, but they do allow for recording information. Now I have a front-end built in JavaScript React, and it's very very primitive but right now it doesn't do any invocations of the API doesn't consume the back end at all. Instead everything's sort of like mocked up and I'm just kind of like filling out user experience. So some things you want to do is probably like fix user experience, get some like user stories or something, figure out what the UI actually needs and the UX is, figure out APIs that we have and what API support those user stories, and then update the front end to support the user experience we want and to rely on mock API calls for now, but we'll make actual API calls eventually. And so that's just like the general kind of state of things. I don't want you to necessarily bullet point that, but I do need you to help me figure out the long-term structure of this thing, the tasks that need to be done, etc, etc.
+
+2023-12-31 10:31:00:
+I want to see how this feels when it writes out. Let's see if it looks good.
+
+2023-12-31 10:31:38:
+Okay, let's go with a slightly longer transcription just so we can see how it looks when you actually write out all of this text. It used to be that there was some delay because it was a 0.005 and I changed it to 0.0015, the hope that it still writes out pretty, but that it's a lot faster. I'm not convinced it's going to look as good though.
+
+2023-12-31 10:32:43:
+So the intention here is to see how it looks to write out a bunch of clean text and see how we actually like it. So what I mean by clean text is it's going to be writing out text character by character and we want that to be lightning fast but still visually appealing.
+
+2023-12-31 10:39:52:
+All right, here we are. We're going to be trying to talk for more than six seconds, which is, I guess,
+
+2023-12-31 10:39:53:
+I chose. And the idea is that it'll have two
+
+2023-12-31 10:39:54:
+chunks and that we transcribe both chunks and I guess this is only useful if you have a really long
+
+2023-12-31 10:39:54:
+audio but why not. Just check it out right?

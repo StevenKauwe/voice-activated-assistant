@@ -50,16 +50,20 @@ def init_local_model():
     logger.info(f"Loading model: {model_id} on device: {device}")
 
     model = AutoModelForSpeechSeq2Seq.from_pretrained(
-        model_id, torch_dtype=torch_dtype, low_cpu_mem_usage=True, use_safetensors=True
+        model_id,
+        torch_dtype=torch_dtype,
+        low_cpu_mem_usage=True,
+        use_safetensors=True,
+        device_map="cuda",
+    )
+    logger.debug(
+        f"Fount model: {model_id}, time: {time.time() - start_time:0.2f} seconds"
     )
 
+    # model.to(device)
     logger.debug(
         f"Model loaded: {model_id} on device: {device} time: {time.time() - start_time:0.2f} seconds"
     )
-
-    model.to(device)
-
-    logger.debug(f"Loadtime: {time.time() - start_time:0.2f} seconds")
 
     processor = AutoProcessor.from_pretrained(model_id)
 
@@ -72,7 +76,6 @@ def init_local_model():
         chunk_length_s=15,
         batch_size=16,
         torch_dtype=torch_dtype,
-        device=device,
     )
     logger.debug(f"Testing model on example waveform: {example_waveform()}")
     test_transcript = pipe(example_waveform())
@@ -140,7 +143,7 @@ class Transcriber:
             f.write(f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}:\n{text}\n")
 
         if config.USE_SPEECH_TO_TEXT:
-            pyautogui.write(text, interval=0.005)
+            pyautogui.write(text, interval=0.0025)
 
         if config.USE_GPT_POST_PROCESSING:
             openai_client = init_client()

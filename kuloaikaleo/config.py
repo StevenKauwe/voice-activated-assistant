@@ -3,6 +3,7 @@ from dataclasses import dataclass
 ACTIVATION_KEYS = "ctrl+alt+space"
 EXIT_KEYS = "ctrl+alt+s"
 MODEL_ID = "gpt-4-1106-preview"
+AUDIO_FILE_DIR = "outputs"
 
 # HOLD_TO_TALK = True
 HOLD_TO_TALK = False

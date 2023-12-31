@@ -9,7 +9,7 @@ from leo import AudioRecorder
 from loguru import logger
 
 
-def toggle_recording(recorder, transcriber):
+def toggle_recording(recorder: AudioRecorder, transcriber: Transcriber):
     start_time = None
     while True:
         if start_time is not None:
