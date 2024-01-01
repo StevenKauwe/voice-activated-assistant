@@ -11,12 +11,30 @@ HOLD_TO_TALK = False
 TIMEOUT = 60 * 60  # 1 hour
 
 USE_SPEECH_TO_TEXT = True
-USE_GPT_POST_PROCESSING = True
+USE_GPT_POST_PROCESSING = False
 USE_SPOKEN_RESPONSE = False
+
+SETTINGS = {
+    "speech_to_text": {
+        "status": False,
+        "enable_command": "enable speech to text",
+        "disable_command": "disable speech to text",
+    },
+    "gpt_post_processing": {
+        "status": False,
+        "enable_command": "enable GPT post-processing",
+        "disable_command": "disable GPT post-processing",
+    },
+    # Add other settings here
+}
+
 
 LOCAL = True
 LANGUAGE = "en"
 
+START_WORD = "Hi Kevin"
+STOP_WORD = "Bye Kevin"
+DICTATION_AUDIO_FILE = "pre_sounds.mp3"
 
 TRANSCRIPTION_PREPROMPT = """
 # Trascript Converter

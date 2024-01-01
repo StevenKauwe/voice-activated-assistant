@@ -1,9 +1,50 @@
 import math
 import time
 
+import numpy as np
+import pygame
 import torch
 from loguru import logger
 from pydub import AudioSegment
+
+
+def load_numpy_from_audio_file(audio_file: str, target_rate=16000):
+    """
+    Converts an audio file to a NumPy array and resamples to the target rate.
+
+    Args:
+    audio_file (str): The audio file to convert.
+    target_rate (int): The target sampling rate in Hz.
+
+    Returns:
+    numpy.ndarray: A normalized and resampled NumPy array of the audio.
+    """
+
+    audio_segment = AudioSegment.from_file(audio_file)
+
+    # Resample to the target sampling rate
+    if audio_segment.frame_rate != target_rate:
+        audio_segment = audio_segment.set_frame_rate(target_rate)
+
+    # Ensure the audio is mono
+    if audio_segment.channels > 1:
+        audio_segment = audio_segment.set_channels(1)
+
+    # Convert to NumPy array
+    samples = np.array(audio_segment.get_array_of_samples())
+
+    # Normalize and convert to float32
+    samples = samples.astype(np.float32) / (2**15)
+
+    return samples
+
+
+def play_sound(sound_file):
+    pygame.mixer.init()
+    pygame.mixer.music.load(sound_file)
+    pygame.mixer.music.play()
+    while pygame.mixer.music.get_busy():  # Wait for audio to finish playing
+        pygame.time.Clock().tick(10)
 
 
 def timer_decorator(func):

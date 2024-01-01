@@ -11,10 +11,14 @@ import torch
 from dotenv import load_dotenv
 from loguru import logger
 from openai import OpenAI
-from pydub import AudioSegment
 from pygame import mixer
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
-from utils import example_waveform, load_text_file, speed_up_audio, timer_decorator
+from utils import (
+    load_numpy_from_audio_file,
+    load_text_file,
+    speed_up_audio,
+    timer_decorator,
+)
 
 mixer.init()
 
@@ -66,11 +70,13 @@ def init_local_model():
         batch_size=16,
         torch_dtype=torch_dtype,
     )
-    logger.debug(f"Testing model on example waveform: {example_waveform()}")
-    test_transcript = pipe(example_waveform())
-    assert isinstance(
-        test_transcript["text"], str
-    ), "Model failed to transcribe test waveform"
+
+    # # Todo: figure out why so slow on first run
+    # logger.debug(f"Testing model on example waveform: {example_waveform()}")
+    # test_transcript = pipe(example_waveform())
+    # assert isinstance(
+    #     test_transcript["text"], str
+    # ), "Model failed to transcribe test waveform"
 
     logger.info(
         f"Loaded speech to text model in {time.time() - start_time:0.2f} seconds"
@@ -108,11 +114,20 @@ class Transcriber:
         self.stt = STT(local=config.LOCAL)
 
     @timer_decorator
-    def transcribe_and_respond(self, chunks: list[AudioSegment]):
-        transcript_text = self.stt.transcribe(
-            audio_file=chunks,
+    def transcribe(self, audio: np.ndarray, pre_audio_file: str = None):
+        if pre_audio_file:
+            pre_audio = load_numpy_from_audio_file(pre_audio_file)
+            audio = np.concatenate((pre_audio, audio))
+
+        transcript = self.stt.transcribe(
+            audio_file=audio,
         )
-        logger.info(f"Transcript: {transcript_text}")
+        logger.warning(f"Transcript: {transcript}")
+        return transcript
+
+    @timer_decorator
+    def transcribe_and_respond(self, audio: np.ndarray):
+        transcript_text = self.transcribe(audio)
         self._generate_response(transcript_text)
 
     def _generate_response(self, text: str):

@@ -1,5 +1,6 @@
 import os
 import tempfile
+import time
 
 import numpy as np
 import sounddevice as sd
@@ -10,7 +11,8 @@ from utils import timer_decorator
 
 
 class AudioRecorder:
-    def __init__(self):
+    def __init__(self, name="AudioRecorder"):
+        self.name = name
         self.recording = None
         self.is_recording = False
         self.fs = 16000  # Sample rate 16000 for whisper model!
@@ -29,16 +31,26 @@ class AudioRecorder:
         self.is_recording = True
         self.recording = []
         self.stream.start()
-        logger.info("Recording started...")
+        logger.info(f"Recording started for {self.name}...")
 
-    def stop_recording(self) -> AudioSegment:
+    def stop_recording(self) -> np.ndarray:
         self.is_recording = False
         self.stream.stop()
         logger.info("Recording stopped. Processing...")
         return self.process_recording()
 
+    def record_chunk(self, chunk_length=15):
+        """Record a single chunk of audio."""
+        self.start_recording()
+        start_time = time.time()
+
+        while time.time() - start_time < chunk_length:
+            time.sleep(0.1)
+
+        return self.stop_recording()
+
     @timer_decorator
-    def process_recording(self) -> AudioSegment:
+    def process_recording(self) -> np.ndarray:
         data = np.concatenate(self.recording).flatten()
         logger.debug(f"Data shape: {data.shape}")
         return data

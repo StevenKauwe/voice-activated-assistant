@@ -1,87 +1,135 @@
-import concurrent.futures
+import math
 import signal
-import time
+from collections import deque
+from typing import Tuple
 
 import config
-import keyboard
+import numpy as np
 from kaaoao import Transcriber
 from leo import AudioRecorder
 from loguru import logger
+from utils import play_sound
 
 
-def toggle_recording(recorder: AudioRecorder, transcriber: Transcriber):
-    start_time = None
-    while True:
-        if start_time is not None:
-            time_delta = time.time() - start_time
-            if time_delta > config.TIMEOUT:
-                logger.info("Timeout reached, exiting...")
-                chunks = recorder.stop_recording()
-                config.USE_SPEECH_TO_TEXT = False
-                transcriber.transcribe_and_respond(chunks)
-                recorder.save_recording("output.mp3")
-                start_time = None
+class VoiceControlledRecorder:
+    """
+    A voice-controlled recorder that starts and stops recording based on specific trigger words.
+    """
 
-        if keyboard.is_pressed(config.ACTIVATION_KEYS):
-            if not recorder.is_recording:
-                start_time = time.time()
-                recorder.start_recording()
-                time.sleep(0.15)  # Add a small delay
-            else:
-                chunks = recorder.stop_recording()
-                transcriber.transcribe_and_respond(chunks)
-                recorder.save_recording("output.mp3")
-                start_time = None
+    def __init__(self, start_word: str, stop_word: str):
+        """
+        Initialize the voice-controlled recorder with start and stop words.
 
-        if keyboard.is_pressed(config.EXIT_KEYS):
-            logger.info("Exiting...")
-            exit()
+        Parameters
+        ----------
+        start_word : str
+            The word that triggers the start of the recording.
+        stop_word : str
+            The word that triggers the end of the recording.
+        """
+        logger.info("Initializing voice-controlled recorder...")
+        self.start_word = start_word.lower()
+        self.stop_word = stop_word.lower()
+        self.recorder = AudioRecorder()
+        self.wake_audio_recorder = AudioRecorder("wake word recorder")
+        self.transcriber = Transcriber()
+        self.is_recording = False
+        self.buffers = deque()
 
+    def _cleanup_buffers(self, max_length):
+        """
+        Clean up the buffers to prevent memory leak.
+        """
+        # Keep only the last 4 chunks in the buffer
+        while len(self.buffers) > max_length:
+            self.buffers.popleft()
 
-def continuous_recording_while_held(recorder: AudioRecorder, transcriber: Transcriber):
-    while True:
-        if keyboard.is_pressed(config.ACTIVATION_KEYS):
-            if not recorder.is_recording:
-                logger.info("Starting recording...")
-                recorder.start_recording()
+    def _record_audio(self) -> Tuple[bool, bytes]:
+        """
+        Record audio until the stop word is detected.
 
-            while keyboard.is_pressed(config.ACTIVATION_KEYS):
-                # Keep recording as long as the key is pressed
-                time.sleep(0.1)  # Small delay to prevent high CPU usage
+        Returns
+        -------
+        Tuple[bool, bytes]
+            A tuple containing a boolean indicating if the stop word was detected and the recorded audio bytes.
+        """
+        self.recorder.start_recording()
+        logger.info("Recording started...")
+        self.is_recording = True
 
-            if recorder.is_recording:
-                logger.info("Stopping recording...")
-                chunks = recorder.stop_recording()
-                transcriber.transcribe_and_respond(chunks)
-                recorder.save_recording("output.mp3")
-                logger.warning(f"press `{config.EXIT_KEYS}` to kill program")
+        while self.is_recording:
+            word_detected = self._continuous_detection(
+                self.stop_word, pre_audio_file=config.DICTATION_AUDIO_FILE
+            )
+            if word_detected:
+                self.is_recording = False
 
-        if keyboard.is_pressed(config.EXIT_KEYS):
-            logger.info("Exiting...")
-            exit()
+        audio_data = self.recorder.stop_recording()
+        logger.info("Recording stopped.")
+        return self.is_recording, audio_data
+
+    def _continuous_detection(
+        self,
+        word: str,
+        listening_interval: float = 0.5,
+        audio_length: float = 1.5,
+        pre_audio_file: str = None,
+    ):
+        """
+        Continuously detect the start word and respond by recording until the stop word is detected.
+        """
+        audio_chunk = self.wake_audio_recorder.record_chunk(listening_interval)
+        self.buffers.append(audio_chunk)  # Add the new chunk to the buffer
+
+        # Concatenate the buffered audio chunks
+        audio_chunk = np.concatenate(list(self.buffers))
+        max_length = math.ceil(audio_length / listening_interval)
+        self._cleanup_buffers(max_length)
+
+        transcription = self.transcriber.transcribe(audio_chunk, pre_audio_file).lower()
+        word_detected = word in transcription
+
+        if word_detected:
+            self.buffers = deque()  # Reset the buffer on detection
+
+        return word_detected
+
+    def listen_and_respond(self):
+        """
+        Listen for the start word and respond by recording until the stop word is detected.
+        """
+
+        while True:
+            word_detected = self._continuous_detection(
+                self.start_word, pre_audio_file=config.DICTATION_AUDIO_FILE
+            )
+            if word_detected and not self.is_recording:
+                play_sound("sound_start.wav")
+                _, audio_data = self._record_audio()
+                play_sound("sound_end.wav")
+                self.transcriber.transcribe_and_respond(audio_data)
+                self.recorder.save_recording("output.mp3")
 
 
 def main():
-    recorder = AudioRecorder()
-    transcriber = Transcriber()
-
-    if config.HOLD_TO_TALK:
-        logger.info(f"Hold `{config.ACTIVATION_KEYS}` and speak for STT")
-        continuous_recording_while_held(recorder=recorder, transcriber=transcriber)
-    else:
-        logger.info(
-            f"Press `{config.ACTIVATION_KEYS}` to start recording and `{config.ACTIVATION_KEYS}` to stop"
-        )
-        toggle_recording(recorder=recorder, transcriber=transcriber)
+    """
+    Main function to run the voice-controlled recorder.
+    """
+    voice_controlled_recorder = VoiceControlledRecorder(
+        start_word=config.START_WORD, stop_word=config.STOP_WORD
+    )
+    logger.info("Voice-controlled recorder initialized.")
+    voice_controlled_recorder.listen_and_respond()
 
 
 def run():
-    logger.info("Starting...")
+    """
+    Run the main function with proper signal handling.
+    """
+    logger.info("Starting voice-controlled recorder...")
     signal.signal(signal.SIGTERM, lambda signum, frame: exit())
     signal.signal(signal.SIGINT, lambda signum, frame: exit())
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        future = executor.submit(main)
-        future.result()
+    main()
 
 
 if __name__ == "__main__":
