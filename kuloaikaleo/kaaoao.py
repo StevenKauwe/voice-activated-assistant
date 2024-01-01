@@ -16,6 +16,7 @@ from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 from utils import (
     load_numpy_from_audio_file,
     load_text_file,
+    remove_stop_phrase,
     speed_up_audio,
     timer_decorator,
 )
@@ -122,13 +123,14 @@ class Transcriber:
         transcript = self.stt.transcribe(
             audio_file=audio,
         )
-        logger.warning(f"Transcript: {transcript}")
+        logger.debug(f"Transcript: {transcript}")
         return transcript
 
     @timer_decorator
     def transcribe_and_respond(self, audio: np.ndarray):
         transcript_text = self.transcribe(audio)
-        self._generate_response(transcript_text)
+        clean_transcript = remove_stop_phrase(transcript_text, config.STOP_PHRASE)
+        self._generate_response(clean_transcript)
 
     def _generate_response(self, text: str):
         with open("output.txt", "a") as f:
@@ -164,6 +166,7 @@ class Transcriber:
 
         if config.USE_SPOKEN_RESPONSE:
             self._speak_response(response_text)
+        logger.info(f"Response: {response_text}")
 
     def _speak_response(self, response_text: str):
         try:
@@ -187,5 +190,5 @@ class Transcriber:
             # Unload the current music
             mixer.music.unload()
         except Exception as e:
-            logger.error(f"Error with text-to-speech engine: {e}")
+            logger.exception(f"Error with text-to-speech engine: {e}")
         logger.info("Response spoken.")

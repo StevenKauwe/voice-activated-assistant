@@ -1041,3 +1041,147 @@ So we should say a bunch of things, blah, blah, blah, blah, blah, and then we go
 
 2023-12-31 18:55:36:
 Now we're going to talk a bunch, we're going to make a bunch of stuff get written, and we're going to do good things, and then I'm going to say bye Kevin.
+
+2023-12-31 20:42:56:
+Okay, I'm going to say a bunch of words, then I'm going to say, bye Kevin. Bye Kevin. Goodbye, Kevin. Bye Kevin. Bye Kevin.
+
+2023-12-31 21:06:09:
+Hey, we've got something going here. Bye Kevin.
+
+2023-12-31 21:07:05:
+Okay, so I'm going to talk and we're going to see if it dictates a bunch of stuff. I think it will. I think it'll do a bunch of stuff. And ideally what also works is if I say bye Kevin, it'll also work.
+
+2023-12-31 21:07:33:
+Turns out Kevin is who we're talking to this whole time. So like the dog, the cat, Mew 2, Geodud, Bye Kevin. It's all the same. By Kevin? I said Bye Kevin. It looks like it didn't pick it up.
+
+2023-12-31 21:12:18:
+Okay, so something slightly broken. The signal cue seems to be growing in size constantly, and I'm wondering if it has to do with whatever the in data is on this like audio callback. The signal cues being appended in data. Copy. My math says signal Q, I have it set to max seconds equals 2, so I would expect it to be 32,000 the size of the signal Q when I call signal array property, but that does not seem to be the case. So help me out here. Bye Kevin.
+
+2023-12-31 21:16:25:
+Bye, Kevin.
+
+2023-12-31 21:26:18:
+All right, so before it failed on Bye-bye, baby.
+
+2023-12-31 21:26:44:
+You really, really do love it. This is recording. This is recording. I'll say something. I love my husband, whose name is Kai. There we go. I don't know if you even heard that, but if you did, bye-bye, baby
+
+2023-12-31 21:27:11:
+My wife wanted to say you're wrong and racist because when she said kai, you thought she said kai. That's all. Bye baby. Wait. Bye-bye, baby.
+
+2023-12-31 21:28:22:
+Bye, baby. Bye, bye, baby.
+
+2023-12-31 21:28:29:
+It's not that much faster, is it? Bye-bye, baby.
+
+2023-12-31 21:30:00:
+Bye, baby.
+
+2023-12-31 21:32:04:
+Okay, that's that fixed it and I think by baby still works
+
+2023-12-31 21:32:48:
+Okay, so what I've got here is I can start my speech text with hi baby. That's my wake-up phrase. And my stop phrase is, bye baby.
+
+2023-12-31 21:33:19:
+And the problem I'm having is that the stop phrase, those last words, are included in the transcription, because the transcription can't end until that phrase is stated. And so I need to like somehow retroactively remove that phrase. Yeah, bye baby.
+
+2023-12-31 21:34:23:
+Okay, bye baby.
+
+2023-12-31 21:34:50:
+Bye, baby.
+
+2023-12-31 21:37:58:
+Can we, I don't know, clean this up a little bit. We used Reg X to figure out if an escape word was in a phrase, or sorry if the phrase was in the transcript. So I'm wondering if maybe we can use that same logic to remove the phrase from the end of a transcript. And the reason I say that is like if my phrase is bye-bye baby.
+
+2023-12-31 21:38:21:
+In that case, I might start, or my punctuation might be different than the transcript punctuation, but the words are the same. So something like Reg X to pick that up and then scrape all of the ending phrase would be great. Bye-bye, baby.
+
+2023-12-31 21:39:13:
+So the regics who just gave me, if my stop phrase was by, then a space, and then by, and then a space, and then baby, would I be able to pick up the stop phrase you actually put in there if that was, if the one you showed with the hyphen was the one in the transcript? Bye, baby.
+
+2023-12-31 21:39:59:
+Can't we just like... I mean, like the stopphrase, to me is just a bunch of words appearing in order. So it's those words regardless of how they're spelled. So I'm gonna check to see if those words as actual like words, reg x-y's appear in order at the end of text. You know what I'm saying? Bye, baby.
+
+2023-12-31 21:41:00:
+All right, let's see if this works. Bye, baby.
+
+2023-12-31 21:41:11:
+Seems like this doesn't work, god damn it, because I see Bye Baby at the end of...
+
+2023-12-31 21:49:33:
+Ideally it removes everything.
+
+2023-12-31 21:50:33:
+How you doing baby? Good baby. Yeah. I'm fucking murdering them, eh? I believe it. You're so good at this game. Well? Oh, it's so good. Hey, see if I can beat the heart. I don't know. I think, I think you'll do good bye baby. Nice, I didn't work.
+
+2023-12-31 21:51:58:
+I have the guru logging going on and I want to update my script so that I don't see the debug messages, only info and above. Please write me that Python function.
+
+GPT output:
+```python
+from loguru import logger
+
+def update_logging_level():
+    """
+    Update the logging level to only display info and above messages.
+    """
+    logger.remove()
+    logger.add(sys.stderr, level="INFO")
+```
+
+2023-12-31 21:52:17:
+Is there a way to, can you sure what the environment variable is to set the log level?
+
+GPT output:
+```python
+import os
+from loguru import logger
+
+def set_log_level_env_var(level: str):
+    """
+    Set the log level using an environment variable.
+
+    Args:
+    level (str): The log level to set (e.g. "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL").
+    """
+    os.environ["LOGURU_LEVEL"] = level
+    logger.remove()
+    logger.add(sys.stderr, level=level)
+```
+
+2023-12-31 21:52:48:
+Are both of these valid options? Bye baby, come here.
+
+GPT output:
+```python
+from loguru import logger
+import os
+import sys
+
+def update_logging_level():
+    """
+    Update the logging level to only display info and above messages.
+    """
+    logger.remove()
+    logger.add(sys.stderr, level="INFO")
+
+def set_log_level_env_var(level: str):
+    """
+    Set the log level using an environment variable.
+
+    Args:
+    level (str): The log level to set (e.g. "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL").
+    """
+    os.environ["LOGURU_LEVEL"] = level
+    logger.remove()
+    logger.add(sys.stderr, level=level)
+```
+
+2023-12-31 22:00:49:
+
+
+GPT output:
+I'm here to help! Please provide the audio transcription so that I can assist you further.

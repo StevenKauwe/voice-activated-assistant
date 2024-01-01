@@ -1,4 +1,5 @@
 import math
+import re
 import time
 
 import numpy as np
@@ -6,6 +7,30 @@ import pygame
 import torch
 from loguru import logger
 from pydub import AudioSegment
+
+
+def create_regex_pattern(phrase):
+    # Split the phrase into words
+    words = phrase.split()
+
+    # Create regex capture groups for each word
+    # Join them allowing for non-word characters in between
+    regex_pattern = r"[^\w]*".join(map(re.escape, words))
+
+    # Add an assertion to match at the end of the string
+    regex_pattern += r"[^\w]*$"
+
+    return regex_pattern
+
+
+def remove_stop_phrase(transcript, stop_phrase):
+    # Generate the regex pattern from the stop phrase
+    pattern = create_regex_pattern(stop_phrase)
+
+    # Use regex to substitute the stop phrase with an empty string
+    cleaned_transcript = re.sub(pattern, "", transcript, flags=re.IGNORECASE).strip()
+
+    return cleaned_transcript
 
 
 def load_numpy_from_audio_file(audio_file: str, target_rate=16000):
