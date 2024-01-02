@@ -1,36 +1,24 @@
 import time
 from datetime import datetime
-from pathlib import Path
 from typing import Union
 
-import config
 import numpy as np
-import pyautogui
-import pyperclip
 import torch
+from config import config
 from dotenv import load_dotenv
 from loguru import logger
-from openai import OpenAI
 from pygame import mixer
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 from utils import (
+    init_client,
     load_numpy_from_audio_file,
-    load_text_file,
     remove_stop_phrase,
-    speed_up_audio,
     timer_decorator,
 )
 
 mixer.init()
 
 load_dotenv()
-
-
-def init_client():
-    openai_client = OpenAI(
-        api_key="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"
-    )
-    return openai_client
 
 
 def init_local_model():
@@ -115,7 +103,7 @@ class Transcriber:
         self.stt = STT(local=config.LOCAL)
 
     @timer_decorator
-    def transcribe(self, audio: np.ndarray, pre_audio_file: str = None):
+    def transcribe_audio(self, audio: np.ndarray, pre_audio_file: str = None):
         if pre_audio_file:
             pre_audio = load_numpy_from_audio_file(pre_audio_file)
             audio = np.concatenate((pre_audio, audio))
@@ -123,72 +111,16 @@ class Transcriber:
         transcript = self.stt.transcribe(
             audio_file=audio,
         )
-        logger.debug(f"Transcript: {transcript}")
+        logger.debug(f"Raw Transcript: {transcript}")
         return transcript
 
-    @timer_decorator
-    def transcribe_and_respond(self, audio: np.ndarray):
-        transcript_text = self.transcribe(audio)
-        clean_transcript = remove_stop_phrase(transcript_text, config.STOP_PHRASE)
-        self._generate_response(clean_transcript)
+    def clean_transcript(self, transcript):
+        clean_transcript = remove_stop_phrase(transcript, config.STOP_ACTION_PHRASE)
+        logger.debug(f"Clean Transcript: {transcript}")
+        return clean_transcript
 
-    def _generate_response(self, text: str):
+    def save_transcript(self, transcript):
         with open("output.txt", "a") as f:
-            f.write(f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}:\n{text}\n")
-
-        response_text = text
-        if config.USE_GPT_POST_PROCESSING:
-            openai_client = init_client()
-            response = openai_client.chat.completions.create(
-                model=config.MODEL_ID,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": config.TRANSCRIPTION_PREPROMPT
-                        + load_text_file("prompt.txt")
-                        + pyperclip.paste(),
-                    },
-                    {"role": "user", "content": f"Trascription of audio: '{text}'"},
-                ],
-                max_tokens=1000,
-                temperature=0.1,
+            f.write(
+                f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}:\n{transcript}\n"
             )
-            response_text = response.choices[0].message.content
-            logger.info(f"Response: {response_text}")
-
-            with open("output.txt", "a") as f:
-                f.write(f"\nGPT output:\n{response_text}\n")
-
-        if config.USE_SPEECH_TO_TEXT:
-            # pyautogui.write(response_text, interval=0.0025)
-            pyperclip.copy(response_text)
-            pyautogui.hotkey("ctrl", "v")
-
-        if config.USE_SPOKEN_RESPONSE:
-            self._speak_response(response_text)
-        logger.info(f"Response: {response_text}")
-
-    def _speak_response(self, response_text: str):
-        try:
-            openai_client = init_client()
-            speech_file_path = Path(__file__).parent / "response.mp3"
-            response = openai_client.audio.speech.create(
-                model="tts-1",
-                voice="alloy",
-                input=response_text,
-            )
-
-            response.stream_to_file(speech_file_path)
-            speed_up_audio("response.mp3", speed=1.5)
-            mixer.music.load("response.mp3")
-            mixer.music.play()
-            import time
-
-            while mixer.music.get_busy():
-                time.sleep(0.1)
-
-            # Unload the current music
-            mixer.music.unload()
-        except Exception as e:
-            logger.exception(f"Error with text-to-speech engine: {e}")
-        logger.info("Response spoken.")

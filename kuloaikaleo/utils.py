@@ -1,12 +1,18 @@
 import math
 import re
 import time
+from pathlib import Path
 
 import numpy as np
+import pyautogui
 import pygame
+import pyperclip
 import torch
+from config import config
 from loguru import logger
+from openai import OpenAI
 from pydub import AudioSegment
+from pygame import mixer
 
 
 def create_regex_pattern(phrase):
@@ -21,6 +27,16 @@ def create_regex_pattern(phrase):
     regex_pattern += r"[^\w]*$"
 
     return regex_pattern
+
+
+def transcript_contains_phrase(transcript, action_phrase):
+    # Generate the regex pattern from the stop phrase
+    pattern = create_regex_pattern(action_phrase)
+
+    # Use regex to search for the stop phrase
+    match = re.search(pattern, transcript, flags=re.IGNORECASE)
+    logger.debug(f"{transcript} contains {action_phrase}: {match is not None}")
+    return match is not None
 
 
 def remove_stop_phrase(transcript, stop_phrase):
@@ -112,3 +128,65 @@ def load_text_file(file_path):
     with open(file_path, "r") as file:
         text = file.read()
     return text
+
+
+def init_client():
+    openai_client = OpenAI(
+        api_key="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"
+    )
+    return openai_client
+
+
+def gpt_post_process_transcript(transcript: str):
+    openai_client = init_client()
+    response = openai_client.chat.completions.create(
+        model=config.MODEL_ID,
+        messages=[
+            {
+                "role": "system",
+                "content": config.TRANSCRIPTION_PREPROMPT
+                + load_text_file("prompt.md")
+                + pyperclip.paste(),
+            },
+            {"role": "user", "content": f"Trascription of audio: '{transcript}'"},
+        ],
+        max_tokens=1000,
+        temperature=0.1,
+    )
+    response_text = response.choices[0].message.content
+
+    with open("output.txt", "a") as f:
+        f.write(f"\nGPT output:\n{response_text}\n")
+
+    return response_text
+
+
+def paste_transcript(transcript: str):
+    pyperclip.copy(transcript)
+    pyautogui.hotkey("ctrl", "v")
+
+
+def tts_transcript(transcript: str):
+    try:
+        openai_client = init_client()
+        speech_file_path = Path(__file__).parent / "response.mp3"
+        response = openai_client.audio.speech.create(
+            model="tts-1",
+            voice="alloy",
+            input=transcript,
+        )
+
+        response.stream_to_file(speech_file_path)
+        speed_up_audio("response.mp3", speed=1.5)
+        mixer.music.load("response.mp3")
+        mixer.music.play()
+        import time
+
+        while mixer.music.get_busy():
+            time.sleep(0.1)
+
+        # Unload the current music
+        mixer.music.unload()
+    except Exception as e:
+        logger.exception(f"Error with text-to-speech engine: {e}")
+    logger.info("Response spoken.")
