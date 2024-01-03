@@ -1,1 +1,1 @@
-# whisper-gpt
+# whisper + gpt
