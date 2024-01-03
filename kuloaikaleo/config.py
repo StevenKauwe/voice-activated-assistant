@@ -19,18 +19,7 @@ class Config:
         self.TIMEOUT = 60 * 60  # 1 hour
 
         self.USE_STT = True
-        self.USE_GPT = False
         self.USE_TTS = False
-
-        # Action phrases
-        self.START_ACTION_PHRASE = "hi baby"
-        self.STOP_ACTION_PHRASE = "bye baby"
-        self.DICTATION_AUDIO_FILE = "pre_sounds.mp3"
-
-        self.TOGGLE_GPT_ACTION_PHRASE = "gpt3"
-
-        self.UPDATE_SETTINGS_ACTION_PHRASE = "update settings"
-
         self.LOCAL = True
         self.LANGUAGE = "en"
 

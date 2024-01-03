@@ -12,7 +12,7 @@ from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 from utils import (
     init_client,
     load_numpy_from_audio_file,
-    remove_stop_phrase,
+    remove_trailing_phrase,
     timer_decorator,
 )
 
@@ -114,8 +114,8 @@ class Transcriber:
         logger.debug(f"Raw Transcript: {transcript}")
         return transcript
 
-    def clean_transcript(self, transcript):
-        clean_transcript = remove_stop_phrase(transcript, config.STOP_ACTION_PHRASE)
+    def clean_transcript(self, transcript, phrase):
+        clean_transcript = remove_trailing_phrase(transcript, phrase)
         logger.debug(f"Clean Transcript: {transcript}")
         return clean_transcript
 

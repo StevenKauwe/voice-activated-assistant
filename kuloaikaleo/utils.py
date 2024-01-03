@@ -1,4 +1,5 @@
 import math
+import os
 import re
 import time
 from pathlib import Path
@@ -39,9 +40,9 @@ def transcript_contains_phrase(transcript, action_phrase):
     return match is not None
 
 
-def remove_stop_phrase(transcript, stop_phrase):
+def remove_trailing_phrase(transcript, phrase):
     # Generate the regex pattern from the stop phrase
-    pattern = create_regex_pattern(stop_phrase)
+    pattern = create_regex_pattern(phrase)
 
     # Use regex to substitute the stop phrase with an empty string
     cleaned_transcript = re.sub(pattern, "", transcript, flags=re.IGNORECASE).strip()
@@ -132,7 +133,7 @@ def load_text_file(file_path):
 
 def init_client():
     openai_client = OpenAI(
-        api_key="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"
+        api_key=os.getenv("OPENAI_API_KEY"),
     )
     return openai_client
 

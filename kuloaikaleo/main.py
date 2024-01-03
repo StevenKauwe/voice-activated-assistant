@@ -8,7 +8,6 @@ from actions import (
     TranscribeAndPasteTextAction,
     UpdateSettingsAction,
 )
-from config import config
 from kaaoao import Transcriber, init_client
 from leo import AudioDetector, AudioRecorder
 from loguru import logger
@@ -69,7 +68,7 @@ class VoiceControlledRecorder:
         while True:
             transcription = self.audio_detector.detect_phrases(
                 listening_interval=0.5,
-                pre_audio_file=config.DICTATION_AUDIO_FILE,
+                pre_audio_file="pre_audio.mp3",
             )
             action_performed = self.action_controller.check_and_perform_actions(
                 transcription

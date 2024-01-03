@@ -39,33 +39,21 @@ class TranscribeActionResponse(ActionResponse):
         self.transcript = transcript
 
 
-class ToggleGptAction(Action):
-    def __init__(self):
-        super().__init__(config.TOGGLE_GPT_ACTION_PHRASE)
-
-    def perform(self, transcript: str = None):
-        config.USE_GPT = not config.USE_GPT
-        logger.info(
-            f"Toggling GPT to {config.USE_GPT}; GPT phrase detected in Trascription:\n'{transcript}'"
-        )
-        return ActionResponse(self, True)
-
-
 class StartTranscriptionAction(Action):
     def __init__(
         self,
-        action_phrase: str,
+        phrase: str,
         audio_recorder: AudioRecorder,
         transcriber: Transcriber,
     ):
-        super().__init__(action_phrase)
-        self.action_phrase = action_phrase
+        super().__init__(phrase)
+        self.phrase = phrase
         self.audio_recorder = audio_recorder
         self.transcriber = transcriber
 
     def perform(self, action_phrase_transcript):
         if (
-            transcript_contains_phrase(action_phrase_transcript, self.action_phrase)
+            transcript_contains_phrase(action_phrase_transcript, self.phrase)
             and not self.audio_recorder.is_recording
         ):
             self.audio_recorder.start_recording()
@@ -78,18 +66,18 @@ class StartTranscriptionAction(Action):
 class StopTranscriptionAction(Action):
     def __init__(
         self,
-        action_phrase: str,
+        phrase: str,
         audio_recorder: AudioRecorder,
         transcriber: Transcriber,
     ):
-        super().__init__(action_phrase)
-        self.action_phrase = action_phrase
+        super().__init__(phrase)
+        self.phrase = phrase
         self.audio_recorder = audio_recorder
         self.transcriber = transcriber
 
     def perform(self, action_phrase_transcript):
         if (
-            transcript_contains_phrase(action_phrase_transcript, self.action_phrase)
+            transcript_contains_phrase(action_phrase_transcript, self.phrase)
             and self.audio_recorder.is_recording
         ):
             audio_data = self.audio_recorder.stop_recording()
@@ -133,7 +121,9 @@ class TranscribeAction(Action):
         return TranscribeActionResponse(self, False)
 
     def _clean_and_save_transcript(self, transcript):
-        cleaned_transcript = self.transcriber.clean_transcript(transcript)
+        cleaned_transcript = self.transcriber.clean_transcript(
+            transcript, self.stop_action.phrase
+        )
         self.transcriber.save_transcript(transcript)
         self.audio_recorder.save_recording("output.mp3")
         return cleaned_transcript
@@ -191,8 +181,18 @@ class TalkToGPTAction(TranscribeAction):
             transcript = transcription_response.transcript
             cleaned_transcript = self._clean_and_save_transcript(transcript)
             processed_transcript = gpt_post_process_transcript(cleaned_transcript)
+            print(f"USE_TTS: {config.USE_TTS}, USE_STT: {config.USE_STT}")
+
+            if "```python" in processed_transcript:
+                none_python_text = (
+                    processed_transcript.split("```python")[0]
+                    + processed_transcript.split("```python")[1].split("```")[1]
+                )
+            else:
+                none_python_text = processed_transcript
+
             if config.USE_TTS:
-                tts_transcript(processed_transcript)
+                tts_transcript(none_python_text)
             if config.USE_STT:
                 paste_transcript(processed_transcript)
             logger.debug(f"GPT Processed Transcript: {processed_transcript}")
@@ -232,14 +232,17 @@ class UpdateSettingsAction(TranscribeAction):
             preprompt = f"""
                 Update config settings based on config attributes.
                 Return json object with updated settings.
-                example usage:
-                
-                Attributes: {', '.join(config_attributes)}
+                Do not include any other response, just the json object.
+                This is effectively "function calling".
+                Assume values if not given e.g. "enable internet" -> "USE_INTERNET=True"
 
-                Response:
+                
+                Only use the Attributes: {', '.join(config_attributes)}
+
+                Example Response:
                 ```json
                 {{
-                    "ATTRIBUT_NAME": "NEW_VALUE"
+                    "ATTRIBUTE_NAME": "NEW_VALUE"
                 }}
                 ```
             """
@@ -249,7 +252,7 @@ class UpdateSettingsAction(TranscribeAction):
                     {"role": "system", "content": preprompt},
                     {
                         "role": "user",
-                        "content": f"Trascription of audio: '{cleaned_transcript}'",
+                        "content": f"User Command: '{cleaned_transcript}'",
                     },
                 ],
                 max_tokens=1000,
