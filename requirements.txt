@@ -11,7 +11,7 @@ pyautogui
 openai-whisper
 huggingface_hub
 transformers
-torch --index-url https://download.pytorch.org/whl/cu121
+torch # --index-url https://download.pytorch.org/whl/cu121
 torchaudio
 accelerate
 pyperclip

@@ -1,14 +1,17 @@
 import json
+from textwrap import dedent
 from typing import Optional
 
+import pyperclip
 from config import config
 from kaaoao import Transcriber
 from leo import AudioRecorder
 from loguru import logger
 from openai import OpenAI
 from utils import (
-    gpt_post_process_transcript,
-    paste_transcript,
+    init_client,
+    load_text_file,
+    paste_at_cursor,
     play_sound,
     transcript_contains_phrase,
     tts_transcript,
@@ -57,7 +60,7 @@ class StartTranscriptionAction(Action):
             and not self.audio_recorder.is_recording
         ):
             self.audio_recorder.start_recording()
-            logger.info("Recording started...")
+            logger.info("StartTranscriptionAction - Recording started.")
             play_sound("sound_start.wav")
             return ActionResponse(self, True)
         return ActionResponse(self, False)
@@ -75,15 +78,18 @@ class StopTranscriptionAction(Action):
         self.audio_recorder = audio_recorder
         self.transcriber = transcriber
 
-    def perform(self, action_phrase_transcript):
+    def perform(self, action_phrase_transcript, in_progress: bool = False):
+        if not in_progress:
+            return TranscribeActionResponse(self, False)
         if (
             transcript_contains_phrase(action_phrase_transcript, self.phrase)
             and self.audio_recorder.is_recording
         ):
             audio_data = self.audio_recorder.stop_recording()
-            logger.info("Recording stopped.")
+            logger.info("StopTranscriptionAction - Recording stopped.")
             play_sound("sound_end.wav")
             action_phrase_transcript = self.transcriber.transcribe_audio(audio_data)
+            logger.info(f"Raw Transcript: {action_phrase_transcript}")
             return TranscribeActionResponse(self, True, action_phrase_transcript)
         return TranscribeActionResponse(self, False)
 
@@ -106,18 +112,23 @@ class TranscribeAction(Action):
         )
         self.transcriber = transcriber
         self.audio_recorder = audio_recorder
+        self.in_progress = False
 
     def _action_logic(self, transcription_response) -> TranscribeActionResponse:
         raise NotImplementedError
 
     def perform(self, action_phrase_transcript):
         start_action_response = self.start_action.perform(action_phrase_transcript)
-        stop_action_response = self.stop_action.perform(action_phrase_transcript)
+        stop_action_response = self.stop_action.perform(
+            action_phrase_transcript, self.in_progress
+        )
         if start_action_response.success:
+            self.in_progress = True
             return TranscribeActionResponse(self.start_action, True)
-        elif stop_action_response.success:
+        elif stop_action_response.success and self.in_progress:
+            self.in_progress = False
             return self._action_logic(stop_action_response)
-        logger.warning("TranscribeAction failed")
+        logger.debug("TranscribeAction did not perform any action.")
         return TranscribeActionResponse(self, False)
 
     def _clean_and_save_transcript(self, transcript):
@@ -129,7 +140,7 @@ class TranscribeAction(Action):
         return cleaned_transcript
 
 
-class TranscribeAndPasteTextAction(TranscribeAction):
+class TranscribeAndSaveTextAction(TranscribeAction):
     def __init__(
         self,
         start_action_phrase: str,
@@ -150,7 +161,10 @@ class TranscribeAndPasteTextAction(TranscribeAction):
         if transcription_response.success:
             transcript = transcription_response.transcript
             cleaned_transcript = self._clean_and_save_transcript(transcript)
-            paste_transcript(cleaned_transcript)
+            if config.COPY_TO_CLIPBOARD:
+                pyperclip.copy(cleaned_transcript)
+            if config.PASTE_AT_CURSOR:
+                paste_at_cursor()
             logger.info(f"Processed Transcript: {transcript}")
             return ActionResponse(success=True, action=self)
         else:
@@ -180,22 +194,55 @@ class TalkToGPTAction(TranscribeAction):
         if transcription_response.success:
             transcript = transcription_response.transcript
             cleaned_transcript = self._clean_and_save_transcript(transcript)
-            processed_transcript = gpt_post_process_transcript(cleaned_transcript)
-            print(f"USE_TTS: {config.USE_TTS}, USE_STT: {config.USE_STT}")
 
-            if "```python" in processed_transcript:
+            # GPT Logic
+            system_prompt = dedent(
+                f"""\
+                context from user:
+                {load_text_file("prompt.md")}
+
+                {pyperclip.paste()}
+                """
+            )
+
+            openai_client = init_client()
+            completion = openai_client.chat.completions.create(
+                model=config.MODEL_ID,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": f"{cleaned_transcript}"},
+                ],
+                max_tokens=1024,
+                temperature=0.1,
+                stream=True,
+            )
+
+            gpt_response_content = ""
+
+            # open the file in append mode
+            with open("live_response.md", "w") as f:
+                f.write("# GPT RESPONSE\n\n")
+            for chunk in completion:
+                str_delta = chunk.choices[0].delta.content
+                if str_delta:
+                    with open("live_response.md", "a") as f:
+                        f.write(str_delta)
+                    gpt_response_content += str_delta
+
+            logger.log("GPT", f"\n{'-'*20}\n{gpt_response_content}\n{'-'*20}\n")
+            with open("output.txt", "a") as f:
+                f.write(f"\nGPT output:\n{gpt_response_content}")
+
+            if "```python" in gpt_response_content:
                 none_python_text = (
-                    processed_transcript.split("```python")[0]
-                    + processed_transcript.split("```python")[1].split("```")[1]
+                    gpt_response_content.split("```python")[0]
+                    + gpt_response_content.split("```python")[1].split("```")[1]
                 )
             else:
-                none_python_text = processed_transcript
+                none_python_text = gpt_response_content
 
             if config.USE_TTS:
                 tts_transcript(none_python_text)
-            if config.USE_STT:
-                paste_transcript(processed_transcript)
-            logger.debug(f"GPT Processed Transcript: {processed_transcript}")
             return ActionResponse(success=True, action=self)
         else:
             return ActionResponse(success=False, action=self)

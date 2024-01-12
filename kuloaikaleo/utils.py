@@ -3,6 +3,7 @@ import os
 import re
 import time
 from pathlib import Path
+from textwrap import dedent
 
 import numpy as np
 import pyautogui
@@ -139,32 +140,47 @@ def init_client():
 
 
 def gpt_post_process_transcript(transcript: str):
+    system_prompt = dedent(
+        f"""\
+        context from user:
+        {load_text_file("prompt.md")}
+
+        {pyperclip.paste()}
+        """
+    )  # config.TRANSCRIPTION_PREPROMPT
+
     openai_client = init_client()
-    response = openai_client.chat.completions.create(
+    completion = openai_client.chat.completions.create(
         model=config.MODEL_ID,
         messages=[
-            {
-                "role": "system",
-                "content": config.TRANSCRIPTION_PREPROMPT
-                + load_text_file("prompt.md")
-                + pyperclip.paste(),
-            },
-            {"role": "user", "content": f"Trascription of audio: '{transcript}'"},
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": f"{transcript}"},
         ],
-        max_tokens=1000,
+        max_tokens=1024,
         temperature=0.1,
+        stream=True,
     )
-    response_text = response.choices[0].message.content
+
+    response_text = ""
 
     with open("output.txt", "a") as f:
-        f.write(f"\nGPT output:\n{response_text}\n")
+        f.write("\nGPT output:\n")
+    for chunk in completion:
+        str_delta = chunk.choices[0].delta.content
+        if str_delta:
+            response_text += str_delta
+            with open("output.txt", "a") as f:
+                f.write(f"{response_text}")
 
     return response_text
 
 
-def paste_transcript(transcript: str):
-    pyperclip.copy(transcript)
-    pyautogui.hotkey("ctrl", "v")
+def paste_at_cursor():
+    pyautogui.keyDown("command")
+    # Press the 'v' key
+    pyautogui.press("v")
+    # Release the 'command' key
+    pyautogui.keyUp("command")
 
 
 def tts_transcript(transcript: str):
@@ -178,7 +194,7 @@ def tts_transcript(transcript: str):
         )
 
         response.stream_to_file(speech_file_path)
-        speed_up_audio("response.mp3", speed=1.5)
+        speed_up_audio("response.mp3", speed=config.AUDIO_SPEED)
         mixer.music.load("response.mp3")
         mixer.music.play()
         import time
@@ -191,3 +207,13 @@ def tts_transcript(transcript: str):
     except Exception as e:
         logger.exception(f"Error with text-to-speech engine: {e}")
     logger.info("Response spoken.")
+
+
+def stt_audio_file(file_name: str):
+    openai_client = init_client()
+    with open(file_name, "rb") as f:
+        transcript = openai_client.audio.transcriptions.create(
+            model="whisper-1", file=f
+        )
+    transcript_text = transcript.text
+    return transcript_text

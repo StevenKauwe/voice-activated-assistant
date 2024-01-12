@@ -1,11 +1,12 @@
 import signal
+import sys
 from typing import Dict
 
 # Assuming the existence of Action classes in actions.py
 from actions import (
     Action,
     TalkToGPTAction,
-    TranscribeAndPasteTextAction,
+    TranscribeAndSaveTextAction,
     UpdateSettingsAction,
 )
 from kaaoao import Transcriber, init_client
@@ -13,8 +14,17 @@ from leo import AudioDetector, AudioRecorder
 from loguru import logger
 from utils import transcript_contains_phrase
 
-# logger.remove()
-# logger.add(sys.stderr, level="INFO")
+
+def logger_init(level="INFO"):
+    logger.remove()
+    # Define a custom log level
+    logger.level("GPT", no=35, color="<fg #a388f2>", icon="🤖")
+    # Add a file handler
+    logger.add("gpt_logs.log", level="GPT")
+    logger.add(sys.stderr, level=level)
+
+
+logger_init()
 
 
 class ActionController:
@@ -45,11 +55,11 @@ class VoiceControlledRecorder:
         self.action_controller = ActionController()
 
     def register_actions(self):
-        transcribe_action = TranscribeAndPasteTextAction(
-            "hi baby", "bye baby", self.recorder, self.transcriber
+        transcribe_action = TranscribeAndSaveTextAction(
+            "hi friend", "see ya", self.recorder, self.transcriber
         )
         talk_to_gpt_action = TalkToGPTAction(
-            "hi computer", "bye computer", self.recorder, self.transcriber
+            "hi computer", "see ya", self.recorder, self.transcriber
         )
         update_settings_action = UpdateSettingsAction(
             "update settings",
@@ -68,14 +78,13 @@ class VoiceControlledRecorder:
         while True:
             transcription = self.audio_detector.detect_phrases(
                 listening_interval=0.5,
-                pre_audio_file="pre_audio.mp3",
             )
             action_performed = self.action_controller.check_and_perform_actions(
                 transcription
             )
             if action_performed:
                 logger.info(
-                    f"Performed action: {action_performed}, clearing signal queue"
+                    f"Detected audio event for `{action_performed}`, clearing signal queue"
                 )
                 self.audio_detector.recorder.refresh_signal_queue()
 
