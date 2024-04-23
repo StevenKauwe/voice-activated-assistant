@@ -1,14 +1,15 @@
 import json
 from textwrap import dedent
 from typing import Optional
+from abc import abstractmethod
 
 import pyperclip
-from config import config
-from kaaoao import Transcriber
-from leo import AudioRecorder
+from voice_action_assistant.config import config
+from voice_action_assistant.transcriber import Transcriber
+from voice_action_assistant.recorder import AudioRecorder
 from loguru import logger
 from openai import OpenAI
-from utils import (
+from voice_action_assistant.utils import (
     init_client,
     load_text_file,
     paste_at_cursor,
@@ -22,7 +23,8 @@ class Action:
     def __init__(self, phrase: str):
         self.phrase = phrase.lower()
 
-    def perform(self, transcript: str = None) -> "ActionResponse":
+    @abstractmethod
+    def perform(self, transcript: str = "") -> "ActionResponse":
         raise NotImplementedError
 
     @property
@@ -107,9 +109,7 @@ class TranscribeAction(Action):
         self.start_action = StartTranscriptionAction(
             start_action_phrase, audio_recorder, transcriber
         )
-        self.stop_action = StopTranscriptionAction(
-            stop_action_phrase, audio_recorder, transcriber
-        )
+        self.stop_action = StopTranscriptionAction(stop_action_phrase, audio_recorder, transcriber)
         self.transcriber = transcriber
         self.audio_recorder = audio_recorder
         self.in_progress = False
@@ -119,9 +119,7 @@ class TranscribeAction(Action):
 
     def perform(self, action_phrase_transcript):
         start_action_response = self.start_action.perform(action_phrase_transcript)
-        stop_action_response = self.stop_action.perform(
-            action_phrase_transcript, self.in_progress
-        )
+        stop_action_response = self.stop_action.perform(action_phrase_transcript, self.in_progress)
         if start_action_response.success:
             self.in_progress = True
             return TranscribeActionResponse(self.start_action, True)
@@ -132,9 +130,7 @@ class TranscribeAction(Action):
         return TranscribeActionResponse(self, False)
 
     def _clean_and_save_transcript(self, transcript):
-        cleaned_transcript = self.transcriber.clean_transcript(
-            transcript, self.stop_action.phrase
-        )
+        cleaned_transcript = self.transcriber.clean_transcript(transcript, self.stop_action.phrase)
         self.transcriber.save_transcript(transcript)
         self.audio_recorder.save_recording("output.mp3")
         return cleaned_transcript
@@ -148,16 +144,10 @@ class TranscribeAndSaveTextAction(TranscribeAction):
         audio_recorder: AudioRecorder,
         transcriber: Transcriber,
     ):
-        super().__init__(
-            start_action_phrase, stop_action_phrase, audio_recorder, transcriber
-        )
+        super().__init__(start_action_phrase, stop_action_phrase, audio_recorder, transcriber)
 
-    def _action_logic(
-        self, transcription_response: TranscribeActionResponse
-    ) -> ActionResponse:
-        logger.debug(
-            f"Transcription response for Paste action: {transcription_response}"
-        )
+    def _action_logic(self, transcription_response: TranscribeActionResponse) -> ActionResponse:
+        logger.debug(f"Transcription response for Paste action: {transcription_response}")
         if transcription_response.success:
             transcript = transcription_response.transcript
             cleaned_transcript = self._clean_and_save_transcript(transcript)
@@ -183,13 +173,9 @@ class TalkToGPTAction(TranscribeAction):
         audio_recorder: AudioRecorder,
         transcriber: Transcriber,
     ):
-        super().__init__(
-            start_action_phrase, stop_action_phrase, audio_recorder, transcriber
-        )
+        super().__init__(start_action_phrase, stop_action_phrase, audio_recorder, transcriber)
 
-    def _action_logic(
-        self, transcription_response: TranscribeActionResponse
-    ) -> ActionResponse:
+    def _action_logic(self, transcription_response: TranscribeActionResponse) -> ActionResponse:
         # Implement specific logic for post-processing after transcription
         if transcription_response.success:
             transcript = transcription_response.transcript
@@ -261,21 +247,13 @@ class UpdateSettingsAction(TranscribeAction):
         transcriber: Transcriber,
         openai_client: OpenAI,
     ):
-        super().__init__(
-            start_action_phrase, stop_action_phrase, audio_recorder, transcriber
-        )
+        super().__init__(start_action_phrase, stop_action_phrase, audio_recorder, transcriber)
         self.openai_client = openai_client
 
-    def _action_logic(
-        self, transcription_response: TranscribeActionResponse
-    ) -> ActionResponse:
-        cleaned_transcript = self._clean_and_save_transcript(
-            transcription_response.transcript
-        )
+    def _action_logic(self, transcription_response: TranscribeActionResponse) -> ActionResponse:
+        cleaned_transcript = self._clean_and_save_transcript(transcription_response.transcript)
         try:
-            config_attributes = [
-                attr for attr in dir(config) if not attr.startswith("__")
-            ]
+            config_attributes = [attr for attr in dir(config) if not attr.startswith("__")]
             preprompt = f"""
                 Update config settings based on config attributes.
                 Return json object with updated settings.

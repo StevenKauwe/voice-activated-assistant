@@ -4,12 +4,13 @@ from typing import Union
 
 import numpy as np
 import torch
-from config import config
 from dotenv import load_dotenv
 from loguru import logger
 from pygame import mixer
-from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
-from utils import (
+from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, Pipeline, pipeline
+
+from voice_action_assistant.config import config
+from voice_action_assistant.utils import (
     init_client,
     load_numpy_from_audio_file,
     remove_trailing_phrase,
@@ -21,7 +22,7 @@ mixer.init()
 load_dotenv()
 
 
-def init_local_model():
+def init_local_model() -> Pipeline:
     start_time = time.time()
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
     torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
@@ -39,9 +40,7 @@ def init_local_model():
         use_safetensors=True,
         device_map=device,
     )
-    logger.debug(
-        f"Fount model: {model_id}, time: {time.time() - start_time:0.2f} seconds"
-    )
+    logger.debug(f"Fount model: {model_id}, time: {time.time() - start_time:0.2f} seconds")
 
     # model.to(device)
     logger.debug(
@@ -68,9 +67,7 @@ def init_local_model():
     #     test_transcript["text"], str
     # ), "Model failed to transcribe test waveform"
 
-    logger.info(
-        f"Loaded speech to text model in {time.time() - start_time:0.2f} seconds"
-    )
+    logger.info(f"Loaded speech to text model in {time.time() - start_time:0.2f} seconds")
     return pipe
 
 
@@ -86,15 +83,18 @@ class STT:
         self,
         audio_file: Union[str, np.ndarray],
     ):
-        if self.local:
+        if self.local and isinstance(audio_file, np.ndarray):
             transcript = self.model(inputs=audio_file)
-            transcript_text = transcript["text"]
-        else:
+            assert isinstance(transcript, dict), "Failed to transcribe audio"
+
+            transcript_text = transcript.get("text")
+        elif isinstance(audio_file, str):
             with open(audio_file, "rb") as f:
-                transcript = self.client.audio.transcriptions.create(
-                    model="whisper-1", file=f
-                )
+                transcript = self.client.audio.transcriptions.create(model="whisper-1", file=f)
                 transcript_text = transcript.text
+        else:
+            raise ValueError("audio_file must be a file path or numpy array")
+        assert isinstance(transcript_text, str), "Failed to transcribe audio"
 
         return transcript_text.strip()
 
@@ -104,7 +104,7 @@ class Transcriber:
         self.stt = STT(local=config.LOCAL)
 
     @timer_decorator
-    def transcribe_audio(self, audio: np.ndarray, pre_audio_file: str = None):
+    def transcribe_audio(self, audio: np.ndarray, pre_audio_file: str = ""):
         if pre_audio_file:
             pre_audio = load_numpy_from_audio_file(pre_audio_file)
             audio = np.concatenate((pre_audio, audio))
@@ -122,6 +122,4 @@ class Transcriber:
 
     def save_transcript(self, transcript):
         with open("output.txt", "a") as f:
-            f.write(
-                f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}:\n{transcript}\n"
-            )
+            f.write(f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}:\n{transcript}\n")

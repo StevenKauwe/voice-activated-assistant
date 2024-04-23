@@ -3,16 +3,16 @@ import sys
 from typing import Dict
 
 # Assuming the existence of Action classes in actions.py
-from actions import (
+from voice_action_assistant.actions import (
     Action,
     TalkToGPTAction,
     TranscribeAndSaveTextAction,
     UpdateSettingsAction,
 )
-from kaaoao import Transcriber, init_client
-from leo import AudioDetector, AudioRecorder
+from voice_action_assistant.transcriber import Transcriber, init_client
+from voice_action_assistant.recorder import AudioDetector, AudioRecorder
 from loguru import logger
-from utils import transcript_contains_phrase
+from voice_action_assistant.utils import transcript_contains_phrase
 
 
 def logger_init(level="INFO"):
@@ -36,9 +36,7 @@ class ActionController:
 
     def check_and_perform_actions(self, transcription: str):
         for action_name, action in self.actions.items():
-            logger.debug(
-                f"Checking phrase: {action.phrase} in transcription: {transcription}"
-            )
+            logger.debug(f"Checking phrase: {action.phrase} in transcription: {transcription}")
             if transcript_contains_phrase(transcription, action.phrase):
                 response = action.perform(transcription)
                 if response.success:
@@ -79,9 +77,7 @@ class VoiceControlledRecorder:
             transcription = self.audio_detector.detect_phrases(
                 listening_interval=0.5,
             )
-            action_performed = self.action_controller.check_and_perform_actions(
-                transcription
-            )
+            action_performed = self.action_controller.check_and_perform_actions(transcription)
             if action_performed:
                 logger.info(
                     f"Detected audio event for `{action_performed}`, clearing signal queue"

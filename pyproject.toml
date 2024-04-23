@@ -1,0 +1,62 @@
+[project]
+name = "voice-action-assistant"
+version = "0.1.0"
+description = "Add your description here"
+dependencies = [
+  "accelerate",
+  "huggingface_hub",
+  "keyboard",
+  "loguru",
+  "numpy",
+  "openai",
+  "openai-whisper",
+  "pyautogui",
+  "pydub",
+  "pygame",
+  "pyperclip",
+  "python-dotenv",
+  "scipy",
+  "sounddevice",
+  "torch",
+  "torchaudio",
+  "transformers",
+]
+readme = "README.md"
+requires-python = ">= 3.12"
+
+[project.scripts]
+va = "voice_action_assistant.main:run"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.rye]
+managed = true
+dev-dependencies = ["ruff"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/voice_action_assistant"]
+
+[tool.ruff]
+line-length = 99
+indent-width = 4
+target-version = "py312"
+
+[tool.ruff.lint]
+extend-select = ["I", "Q"]
+ignore-init-module-imports = true
+select = ["E4", "E7", "E9", "F"]
+ignore = []
+fixable = ["ALL"]
+unfixable = []
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"

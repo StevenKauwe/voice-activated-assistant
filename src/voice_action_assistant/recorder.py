@@ -5,11 +5,12 @@ from collections import deque
 
 import numpy as np
 import sounddevice as sd
-from kaaoao import Transcriber
 from loguru import logger
 from pydub import AudioSegment
 from scipy.io.wavfile import write
-from utils import timer_decorator
+
+from voice_action_assistant.transcriber import Transcriber
+from voice_action_assistant.utils import timer_decorator
 
 
 class AudioRecorder:
@@ -42,7 +43,7 @@ class AudioRecorder:
             self.stream.start()
             logger.info(f"Recording started for {self.name}...")
 
-    def stop_recording(self) -> np.ndarray:
+    def stop_recording(self) -> np.ndarray | None:
         if self.is_recording:
             self.is_recording = False
             self.stream.stop()
@@ -62,9 +63,7 @@ class AudioRecorder:
     @property
     def signal_array(self):
         signal = np.concatenate(list(self.signal_queue)).flatten()
-        logger.debug(
-            f"Len signal queue: {len(self.signal_queue)} ~= len array: {signal.shape}?"
-        )
+        logger.debug(f"Len signal queue: {len(self.signal_queue)} ~= len array: {signal.shape}?")
         return signal
 
     @timer_decorator
@@ -104,7 +103,7 @@ class AudioDetector:
     def detect_phrases(
         self,
         listening_interval: float,
-        pre_audio_file: str = None,
+        pre_audio_file: str = "",
     ):
         if not self.recorder.is_recording:
             logger.debug("Starting wake recorder...")
@@ -114,15 +113,9 @@ class AudioDetector:
         while time.time() - start_time < listening_interval:
             time.sleep(0.1)
 
-        logger.debug(
-            f"max seconds: {self.recorder.max_seconds}, fs: {self.recorder.fs}"
-        )
+        logger.debug(f"max seconds: {self.recorder.max_seconds}, fs: {self.recorder.fs}")
         array_size = int(self.recorder.max_seconds * self.recorder.fs)
-        logger.debug(
-            f"Array size: {array_size} of possible {len(self.recorder.signal_array)}"
-        )
+        logger.debug(f"Array size: {array_size} of possible {len(self.recorder.signal_array)}")
         audio_chunk = self.recorder.signal_array[-array_size:]
-        transcription = self.transcriber.transcribe_audio(
-            audio_chunk, pre_audio_file
-        ).lower()
+        transcription = self.transcriber.transcribe_audio(audio_chunk, pre_audio_file).lower()
         return transcription

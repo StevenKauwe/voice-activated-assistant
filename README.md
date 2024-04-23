@@ -2,7 +2,8 @@
 
 ## Overview
 
-The Voice-Controlled Recorder is a Python application that listens for specific audio cues and performs actions based on those cues. It uses a combination of audio recording, transcription, and action handling to provide a voice-activated interface for various tasks.
+The Voice-Controlled Recorder is a Python application that listens for specific audio cues and performs actions based on those cues.
+It uses a combination of audio recording, transcription, and action handling to provide a voice-activated interface for various tasks.
 
 ## Features
 
@@ -13,27 +14,34 @@ The Voice-Controlled Recorder is a Python application that listens for specific 
 
 ## Requirements
 
-- Python 3.x
-- Dependencies from `requirements.txt` (install with `pip install -r requirements.txt`)
+- Python 3.12+
+- Rye for python package management
+
+```bash
+curl -sSf https://rye-up.com/get | bash
+```
 
 ## Setup
 
-1. Install the required Python packages.
-2. Ensure you have the necessary credentials and settings for any external services used by the actions (e.g., GPT, transcription services).
+1. [Install Rye](https://rye-up.com/guide/installation/)
+2. Initialize and install dependencies via `rye sync`
+3. Ensure you have the necessary credentials and settings for any external services used by the actions (e.g., GPT, transcription services).
 
 ## Usage
 
 To start the voice-controlled recorder, run the following command in your terminal:
 
 ```bash
-python main.py
+rye sync
+rye run voice-assistant
 ```
 
 Once running, the application will listen for the wake phrase and then await further voice commands to trigger registered actions.
 
 ## Actions
 
-The application supports registering custom actions. Each action is associated with a specific phrase that, when detected in the transcription, will trigger the action's `perform` method.
+The application supports registering custom actions.
+Each action is associated with a specific phrase that, when detected in the transcription, will trigger the action's `perform` method.
 
 The following actions are included by default:
 
@@ -45,11 +53,13 @@ You can register additional actions by extending the `Action` class and adding t
 
 ## Customization
 
-To customize actions or add new ones, modify the `VoiceControlledRecorder.register_actions` method. Create instances of your action classes and register them with the `ActionController`.
+To customize actions or add new ones, modify the `VoiceControlledRecorder.register_actions` method.
+Create instances of your action classes and register them with the `ActionController`.
 
 ## Logging
 
-The application uses `loguru` for logging. You can adjust the logging level by modifying the `logger_init` function call in the script.
+The application uses `loguru` for logging.
+You can adjust the logging level by modifying the `logger_init` function call in the script.
 
 ## Graceful Shutdown
 

@@ -1,7 +1,8 @@
 from time import time
 
-from kaaoao import STT
 from loguru import logger
+
+from voice_action_assistant.transcriber import STT
 
 stt = STT(local=True)
 

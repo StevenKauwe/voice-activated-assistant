@@ -10,11 +10,12 @@ import pyautogui
 import pygame
 import pyperclip
 import torch
-from config import config
 from loguru import logger
 from openai import OpenAI
 from pydub import AudioSegment
 from pygame import mixer
+
+from voice_action_assistant.config import config
 
 
 def create_regex_pattern(phrase):
@@ -96,9 +97,7 @@ def timer_decorator(func):
         result = func(*args, **kwargs)
         end_time = time.time()
         elapsed_time = end_time - start_time
-        logger.debug(
-            f"The method {func.__name__} took {elapsed_time} seconds to complete."
-        )
+        logger.debug(f"The method {func.__name__} took {elapsed_time} seconds to complete.")
         return result
 
     return wrapper
@@ -212,8 +211,6 @@ def tts_transcript(transcript: str):
 def stt_audio_file(file_name: str):
     openai_client = init_client()
     with open(file_name, "rb") as f:
-        transcript = openai_client.audio.transcriptions.create(
-            model="whisper-1", file=f
-        )
+        transcript = openai_client.audio.transcriptions.create(model="whisper-1", file=f)
     transcript_text = transcript.text
     return transcript_text
