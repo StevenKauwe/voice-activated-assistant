@@ -25,6 +25,7 @@ readme = "README.md"
 requires-python = ">= 3.12"
 
 [project.scripts]
+voice-assistant = "voice_action_assistant.main:run"
 va = "voice_action_assistant.main:run"
 
 [build-system]

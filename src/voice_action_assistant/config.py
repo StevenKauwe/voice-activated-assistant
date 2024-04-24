@@ -25,7 +25,7 @@ class Config:
         self.USE_TTS = False
         self.LANGUAGE = "en"
 
-        self.PASTE_AT_CURSOR = True
+        self.PASTE_AT_CURSOR = False
         self.COPY_TO_CLIPBOARD = True
 
         self.TRANSCRIPTION_PREPROMPT = dedent(

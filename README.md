@@ -24,19 +24,30 @@ curl -sSf https://rye-up.com/get | bash
 ## Setup
 
 1. [Install Rye](https://rye-up.com/guide/installation/)
-2. Initialize and install dependencies via `rye sync`
+2. Initialize and install dependencies via `rye sync --no-lock`.
+If you want to update the lock files, and therefor the dependencies, run `rye sync` instead.
 3. Ensure you have the necessary credentials and settings for any external services used by the actions (e.g., GPT, transcription services).
+For now the app assumes you have a valid OpenAI API key set as an environment variable.
+
+```bash
+export OPENAI_API_KEY="your_openai_api_key"
+```
 
 ## Usage
 
 To start the voice-controlled recorder, run the following command in your terminal:
 
 ```bash
-rye sync
+rye sync --no-lock
 rye run voice-assistant
+
+# I also included a shorter version of the same command (see .toml to customize)
+ryo run va
 ```
 
 Once running, the application will listen for the wake phrase and then await further voice commands to trigger registered actions.
+You may need to adjust settings to allow the application to access your microphone.
+On a macOS system, you can do this by going to `System Preferences` -> `Security & Privacy` -> `Privacy` -> `Microphone` and enabling access for the terminal application you are using.
 
 ## Actions
 

@@ -1,14 +1,15 @@
 import json
+from abc import abstractmethod
 from textwrap import dedent
 from typing import Optional
-from abc import abstractmethod
 
 import pyperclip
-from voice_action_assistant.config import config
-from voice_action_assistant.transcriber import Transcriber
-from voice_action_assistant.recorder import AudioRecorder
 from loguru import logger
 from openai import OpenAI
+
+from voice_action_assistant.config import config
+from voice_action_assistant.recorder import AudioRecorder
+from voice_action_assistant.transcriber import Transcriber
 from voice_action_assistant.utils import (
     init_client,
     load_text_file,
@@ -63,7 +64,7 @@ class StartTranscriptionAction(Action):
         ):
             self.audio_recorder.start_recording()
             logger.info("StartTranscriptionAction - Recording started.")
-            play_sound("sound_start.wav")
+            play_sound("src/audio_files/sound_start.wav")
             return ActionResponse(self, True)
         return ActionResponse(self, False)
 
@@ -89,7 +90,7 @@ class StopTranscriptionAction(Action):
         ):
             audio_data = self.audio_recorder.stop_recording()
             logger.info("StopTranscriptionAction - Recording stopped.")
-            play_sound("sound_end.wav")
+            play_sound("src/audio_files/sound_end.wav")
             action_phrase_transcript = self.transcriber.transcribe_audio(audio_data)
             logger.info(f"Raw Transcript: {action_phrase_transcript}")
             return TranscribeActionResponse(self, True, action_phrase_transcript)
@@ -132,7 +133,7 @@ class TranscribeAction(Action):
     def _clean_and_save_transcript(self, transcript):
         cleaned_transcript = self.transcriber.clean_transcript(transcript, self.stop_action.phrase)
         self.transcriber.save_transcript(transcript)
-        self.audio_recorder.save_recording("output.mp3")
+        self.audio_recorder.save_recording("src/audio_files/output.mp3")
         return cleaned_transcript
 
 

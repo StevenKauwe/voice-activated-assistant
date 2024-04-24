@@ -38,11 +38,9 @@ duration = 0.15
 start_audio, sample_rate = generate_ping_sound(
     start_start_frequency, start_end_frequency, duration
 )
-save_to_wav(start_audio, sample_rate, "sound_start.wav")
+save_to_wav(start_audio, sample_rate, "src/audio_files/sound_start.wav")
 
 
 # Generate and save stop sound
-stop_audio, sample_rate = generate_ping_sound(
-    stop_start_frequency, stop_end_frequency, duration
-)
-save_to_wav(stop_audio, sample_rate, "sound_end.wav")
+stop_audio, sample_rate = generate_ping_sound(stop_start_frequency, stop_end_frequency, duration)
+save_to_wav(stop_audio, sample_rate, "src/audio_files/sound_end.wav")
