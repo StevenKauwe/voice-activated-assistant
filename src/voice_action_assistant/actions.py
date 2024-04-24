@@ -1,5 +1,5 @@
 import json
-from abc import abstractmethod
+import os
 from textwrap import dedent
 from typing import Optional
 
@@ -12,7 +12,6 @@ from voice_action_assistant.recorder import AudioRecorder
 from voice_action_assistant.transcriber import Transcriber
 from voice_action_assistant.utils import (
     init_client,
-    load_text_file,
     paste_at_cursor,
     play_sound,
     transcript_contains_phrase,
@@ -23,9 +22,9 @@ from voice_action_assistant.utils import (
 class Action:
     def __init__(self, phrase: str):
         self.phrase = phrase.lower()
+        self.audio_files_dir = config.AUDIO_FILES_DIR
 
-    @abstractmethod
-    def perform(self, transcript: str = "") -> "ActionResponse":
+    def perform(self, transcript: str = None) -> "ActionResponse":
         raise NotImplementedError
 
     @property
@@ -64,7 +63,7 @@ class StartTranscriptionAction(Action):
         ):
             self.audio_recorder.start_recording()
             logger.info("StartTranscriptionAction - Recording started.")
-            play_sound("src/audio_files/sound_start.wav")
+            play_sound(os.path.join(self.audio_files_dir, "sound_start.wav"))
             return ActionResponse(self, True)
         return ActionResponse(self, False)
 
@@ -90,7 +89,7 @@ class StopTranscriptionAction(Action):
         ):
             audio_data = self.audio_recorder.stop_recording()
             logger.info("StopTranscriptionAction - Recording stopped.")
-            play_sound("src/audio_files/sound_end.wav")
+            play_sound(os.path.join(self.audio_files_dir, "sound_end.wav"))
             action_phrase_transcript = self.transcriber.transcribe_audio(audio_data)
             logger.info(f"Raw Transcript: {action_phrase_transcript}")
             return TranscribeActionResponse(self, True, action_phrase_transcript)
@@ -133,7 +132,7 @@ class TranscribeAction(Action):
     def _clean_and_save_transcript(self, transcript):
         cleaned_transcript = self.transcriber.clean_transcript(transcript, self.stop_action.phrase)
         self.transcriber.save_transcript(transcript)
-        self.audio_recorder.save_recording("src/audio_files/output.mp3")
+        self.audio_recorder.save_recording("output.mp3")
         return cleaned_transcript
 
 
@@ -173,8 +172,18 @@ class TalkToGPTAction(TranscribeAction):
         stop_action_phrase: str,
         audio_recorder: AudioRecorder,
         transcriber: Transcriber,
+        action_name: str | None = None,
+        system_message: str | None = None,
     ):
         super().__init__(start_action_phrase, stop_action_phrase, audio_recorder, transcriber)
+        self.action_name = action_name
+        default_system_message = dedent(
+            """\
+            Please provide correct answers that are concise but complete.
+            Assume the user wants advaced idiomatic answers if coding is involved.
+            """
+        )
+        self.system_message = system_message or default_system_message
 
     def _action_logic(self, transcription_response: TranscribeActionResponse) -> ActionResponse:
         # Implement specific logic for post-processing after transcription
@@ -185,9 +194,9 @@ class TalkToGPTAction(TranscribeAction):
             # GPT Logic
             system_prompt = dedent(
                 f"""\
-                context from user:
-                {load_text_file("prompt.md")}
+                {self.system_message}
 
+                My current clipboard content (if any):
                 {pyperclip.paste()}
                 """
             )
@@ -199,7 +208,7 @@ class TalkToGPTAction(TranscribeAction):
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": f"{cleaned_transcript}"},
                 ],
-                max_tokens=1024,
+                max_tokens=2048,
                 temperature=0.1,
                 stream=True,
             )
@@ -220,9 +229,13 @@ class TalkToGPTAction(TranscribeAction):
             with open("output.txt", "a") as f:
                 f.write(f"\nGPT output:\n{gpt_response_content}")
 
+            # Copy to clipboard
+            pyperclip.copy(gpt_response_content)
+
             if "```python" in gpt_response_content:
                 none_python_text = (
                     gpt_response_content.split("```python")[0]
+                    + "<python code block>\n\n"
                     + gpt_response_content.split("```python")[1].split("```")[1]
                 )
             else:
@@ -236,7 +249,7 @@ class TalkToGPTAction(TranscribeAction):
 
     @property
     def name(self):
-        return self.__class__.__name__
+        return self.action_name or self.__class__.__name__
 
 
 class UpdateSettingsAction(TranscribeAction):

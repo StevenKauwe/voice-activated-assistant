@@ -1,6 +1,10 @@
+import os
 import signal
 import sys
+import time
 from typing import Dict
+
+from loguru import logger
 
 # Assuming the existence of Action classes in actions.py
 from voice_action_assistant.actions import (
@@ -9,10 +13,10 @@ from voice_action_assistant.actions import (
     TranscribeAndSaveTextAction,
     UpdateSettingsAction,
 )
-from voice_action_assistant.transcriber import Transcriber, init_client
+from voice_action_assistant.config import config
 from voice_action_assistant.recorder import AudioDetector, AudioRecorder
-from loguru import logger
-from voice_action_assistant.utils import transcript_contains_phrase
+from voice_action_assistant.transcriber import Transcriber, init_client
+from voice_action_assistant.utils import load_text_file, transcript_contains_phrase
 
 
 def logger_init(level="INFO"):
@@ -51,13 +55,41 @@ class VoiceControlledRecorder:
         self.transcriber = Transcriber()
         self.audio_detector = AudioDetector(self.wake_audio_recorder, self.transcriber)
         self.action_controller = ActionController()
+        self.action_prompts_dir = config.LLM_ACTION_PROMPTS_DIR
 
     def register_actions(self):
+        """
+        This is where all user actions are registered.
+        This should probably define the different "gpt" actions in a configuration file.
+        """
         transcribe_action = TranscribeAndSaveTextAction(
             "hi friend", "see ya", self.recorder, self.transcriber
         )
         talk_to_gpt_action = TalkToGPTAction(
-            "hi computer", "see ya", self.recorder, self.transcriber
+            "hi computer",
+            "see ya",
+            self.recorder,
+            self.transcriber,
+            action_name="general gpt",
+            system_message=load_text_file(os.path.join(self.action_prompts_dir, "general_gpt.md")),
+        )
+        write_ticket_action = TalkToGPTAction(
+            "new ticket",
+            "see ya",
+            self.recorder,
+            self.transcriber,
+            action_name="write ticket",
+            system_message=load_text_file(os.path.join(self.action_prompts_dir, "jira_ticket.md")),
+        )
+        write_pr_action = TalkToGPTAction(
+            "new pull request",
+            "see ya",
+            self.recorder,
+            self.transcriber,
+            action_name="write pull request description",
+            system_message=load_text_file(
+                os.path.join(self.action_prompts_dir, "pull_request.md"),
+            ),
         )
         update_settings_action = UpdateSettingsAction(
             "update settings",
@@ -68,12 +100,18 @@ class VoiceControlledRecorder:
         )
 
         self.action_controller.register_action(transcribe_action)
-        self.action_controller.register_action(talk_to_gpt_action)
         self.action_controller.register_action(update_settings_action)
+        self.action_controller.register_action(write_ticket_action)
+        self.action_controller.register_action(talk_to_gpt_action)
+        self.action_controller.register_action(write_pr_action)
 
     def listen_and_respond(self):
         self.register_actions()
+        start_time = time.time()  # get the current time
         while True:
+            if time.time() - start_time > 8 * 60 * 60:
+                logger.info("8 hours have passed, shutting down...")
+                break
             transcription = self.audio_detector.detect_phrases(
                 listening_interval=0.5,
             )
@@ -81,6 +119,9 @@ class VoiceControlledRecorder:
             if action_performed:
                 logger.info(
                     f"Detected audio event for `{action_performed}`, clearing signal queue"
+                )
+                logger.info(
+                    "Action is complete and signal queue is cleared... Awaiting next command."
                 )
                 self.audio_detector.recorder.refresh_signal_queue()
 

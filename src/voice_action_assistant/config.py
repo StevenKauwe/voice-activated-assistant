@@ -10,23 +10,30 @@ class Config:
         return cls._instance
 
     def __init__(self):
-        self.ACTIVATION_KEYS = "ctrl+alt+space"
-        self.EXIT_KEYS = "ctrl+alt+s"
-        self.MODEL_ID = "gpt-4-1106-preview"
-        # self.MODEL_ID = "gpt-3.5-turbo-1106"
-        self.AUDIO_FILE_DIR = "outputs"
-        self.HOLD_TO_TALK = False
+        # Define Directory Paths. Don't change these unless you know what you're doing.
+        self.AUDIO_FILES_DIR = "src/audio_files"
+        self.LLM_ACTION_PROMPTS_DIR = "src/llm-action-prompts"
+
+        self.USE_STT = True  # This is expensive if you're using a cloud service
+        self.USE_TTS = False  # This is expensive if you're using a cloud service
+        self.LANGUAGE = "en"
+
+        self.COPY_TO_CLIPBOARD = True
+        # This requires system permissions to run.
+        # Don't enable this unless you know are certain you want to use it.
+        self.PASTE_AT_CURSOR = False
+
+        self.MODEL_ID = "gpt-4-turbo"
+
         self.TIMEOUT = 60 * 60  # 1 hour
         self.AUDIO_SPEED = 1.25
 
-        self.LOCAL = True
+        self.LOCAL = True  # This only works for STT for now
 
-        self.USE_STT = True
-        self.USE_TTS = False
-        self.LANGUAGE = "en"
-
-        self.PASTE_AT_CURSOR = False
-        self.COPY_TO_CLIPBOARD = True
+        #
+        self.ACTIVATION_KEYS = "ctrl+alt+space"
+        self.EXIT_KEYS = "ctrl+alt+s"
+        self.HOLD_TO_TALK = False
 
         self.TRANSCRIPTION_PREPROMPT = dedent(
             """\
