@@ -1,8 +1,8 @@
-# Voice-Controlled Recorder
+# Voice-Activated Assistant
 
 ## Overview
 
-The Voice-Controlled Recorder is a Python application that listens for specific audio cues and performs actions based on those cues.
+The voice-activated assistant is a Python application that listens for specific audio cues and performs actions based on those cues.
 It uses a combination of audio recording, transcription, and action handling to provide a voice-activated interface for various tasks.
 
 ## Features
@@ -35,7 +35,7 @@ export OPENAI_API_KEY="your_openai_api_key"
 
 ## Usage
 
-To start the voice-controlled recorder, run the following command in your terminal:
+To start the voice-activated assistant, run the following command in your terminal:
 
 ```bash
 rye sync --no-lock
