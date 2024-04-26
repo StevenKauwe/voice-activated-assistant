@@ -24,21 +24,22 @@ curl -sSf https://rye-up.com/get | bash
 ## Setup
 
 1. [Install Rye](https://rye-up.com/guide/installation/)
-2. Initialize and install dependencies via `rye sync --no-lock`.
-If you want to update the lock files, and therefor the dependencies, run `rye sync` instead.
+2. Initialize the project and install dependencies via `rye sync`.
 3. Ensure you have the necessary credentials and settings for any external services used by the actions (e.g., GPT, transcription services).
-For now the app assumes you have a valid OpenAI API key set as an environment variable.
+    - For now the app assumes you have a valid OpenAI API key set as an environment variable. You can add this to your .bashrc or .zshrc (or equivalent) to make it permanent.
 
 ```bash
 export OPENAI_API_KEY="your_openai_api_key"
 ```
 
+4. Copy the example_actions_config.yml file. Add, remove, or modify actions as needed.
+
 ## Usage
 
-To start the voice-activated assistant, run the following command in your terminal:
+To start the voice-activated assistant, run EITHER of the following command in your terminal:
 
 ```bash
-rye sync --no-lock
+# Easier to remember but longer to type
 rye run voice-assistant
 
 # I also included a shorter version of the same command (see .toml to customize)
