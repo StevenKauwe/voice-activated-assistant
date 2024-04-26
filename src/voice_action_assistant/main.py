@@ -1,5 +1,7 @@
+import os
 import signal
 import sys
+import threading
 import time
 from typing import Dict
 
@@ -13,9 +15,21 @@ from voice_action_assistant.actions import (
     TranscribeAndSaveTextAction,
     UpdateSettingsAction,
 )
+from voice_action_assistant.config import config
 from voice_action_assistant.recorder import AudioDetector, AudioRecorder
 from voice_action_assistant.transcriber import Transcriber, init_client
-from voice_action_assistant.utils import transcript_contains_phrase
+from voice_action_assistant.utils import play_sound, transcript_contains_phrase
+
+# Start a new thread to play the startup audio
+threading.Thread(
+    target=play_sound,
+    args=(
+        os.path.join(
+            config.AUDIO_FILES_DIR,
+            "startup-audio.wav",
+        ),
+    ),
+).start()
 
 
 def logger_init(level="INFO"):
@@ -118,10 +132,15 @@ def main():
     voice_controlled_recorder.listen_and_respond()
 
 
+def exit_program():
+    play_sound(os.path.join(config.AUDIO_FILES_DIR, "shutdown-audio.wav"))
+    sys.exit()
+
+
 def run():
     logger.info("Starting voice-controlled recorder...")
-    signal.signal(signal.SIGTERM, lambda signum, frame: exit())
-    signal.signal(signal.SIGINT, lambda signum, frame: exit())
+    signal.signal(signal.SIGTERM, lambda signum, frame: exit_program())
+    signal.signal(signal.SIGINT, lambda signum, frame: exit_program())
     main()
 
 
