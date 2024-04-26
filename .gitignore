@@ -157,4 +157,4 @@ cython_debug/
 output.txt
 live_response.md
 # let's not push the lock file
-.lock
+*.lock
