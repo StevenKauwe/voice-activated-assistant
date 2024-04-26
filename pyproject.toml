@@ -15,6 +15,7 @@ dependencies = [
   "pygame",
   "pyperclip",
   "python-dotenv",
+  "PyYAML",
   "scipy",
   "sounddevice",
   "torch",

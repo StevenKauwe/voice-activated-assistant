@@ -1,9 +1,9 @@
-import os
 import signal
 import sys
 import time
 from typing import Dict
 
+import yaml
 from loguru import logger
 
 # Assuming the existence of Action classes in actions.py
@@ -13,10 +13,9 @@ from voice_action_assistant.actions import (
     TranscribeAndSaveTextAction,
     UpdateSettingsAction,
 )
-from voice_action_assistant.config import config
 from voice_action_assistant.recorder import AudioDetector, AudioRecorder
 from voice_action_assistant.transcriber import Transcriber, init_client
-from voice_action_assistant.utils import load_text_file, transcript_contains_phrase
+from voice_action_assistant.utils import transcript_contains_phrase
 
 
 def logger_init(level="INFO"):
@@ -55,41 +54,26 @@ class VoiceControlledRecorder:
         self.transcriber = Transcriber()
         self.audio_detector = AudioDetector(self.wake_audio_recorder, self.transcriber)
         self.action_controller = ActionController()
-        self.action_prompts_dir = config.LLM_ACTION_PROMPTS_DIR
 
-    def register_actions(self):
-        """
-        This is where all user actions are registered.
-        This should probably define the different "gpt" actions in a configuration file.
-        """
+    def load_actions_from_yaml(self, yaml_file: str):
+        with open(yaml_file, "r") as file:
+            actions_config = yaml.safe_load(file)
+
+        for action in actions_config["actions"]:
+            new_action = TalkToGPTAction(
+                start_action_phrase=action["start_phrase"],
+                stop_action_phrase=action["end_phrase"],
+                audio_recorder=self.recorder,
+                transcriber=self.transcriber,
+                action_name=action["name"],
+                system_message=action["prompt"],
+            )
+            self.action_controller.register_action(new_action)
+            logger.info(f"Registered action: {action['name']}")
+
+    def register_base_actions(self):
         transcribe_action = TranscribeAndSaveTextAction(
             "hi friend", "see ya", self.recorder, self.transcriber
-        )
-        talk_to_gpt_action = TalkToGPTAction(
-            "hi computer",
-            "see ya",
-            self.recorder,
-            self.transcriber,
-            action_name="general gpt",
-            system_message=load_text_file(os.path.join(self.action_prompts_dir, "general_gpt.md")),
-        )
-        write_ticket_action = TalkToGPTAction(
-            "new ticket",
-            "see ya",
-            self.recorder,
-            self.transcriber,
-            action_name="write ticket",
-            system_message=load_text_file(os.path.join(self.action_prompts_dir, "jira_ticket.md")),
-        )
-        write_pr_action = TalkToGPTAction(
-            "new pull request",
-            "see ya",
-            self.recorder,
-            self.transcriber,
-            action_name="write pull request description",
-            system_message=load_text_file(
-                os.path.join(self.action_prompts_dir, "pull_request.md"),
-            ),
         )
         update_settings_action = UpdateSettingsAction(
             "update settings",
@@ -98,12 +82,15 @@ class VoiceControlledRecorder:
             self.transcriber,
             init_client(),
         )
-
         self.action_controller.register_action(transcribe_action)
         self.action_controller.register_action(update_settings_action)
-        self.action_controller.register_action(write_ticket_action)
-        self.action_controller.register_action(talk_to_gpt_action)
-        self.action_controller.register_action(write_pr_action)
+
+    def register_actions(self):
+        """
+        Load and register actions from a YAML configuration file.
+        """
+        self.register_base_actions()
+        self.load_actions_from_yaml("actions_config.yml")
 
     def listen_and_respond(self):
         self.register_actions()
