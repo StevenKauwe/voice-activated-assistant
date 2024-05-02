@@ -14,7 +14,7 @@ It uses a combination of audio recording, transcription, and action handling to 
 
 ## Requirements
 
-- Python 3.12+
+- Python 3.12+ (Rye will install this for you)
 - Rye for python package management
 
 ```bash
