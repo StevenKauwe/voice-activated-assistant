@@ -1,5 +1,6 @@
 import json
 import os
+import re
 from textwrap import dedent
 from typing import Optional
 
@@ -11,9 +12,11 @@ from voice_action_assistant.config import config
 from voice_action_assistant.recorder import AudioRecorder
 from voice_action_assistant.transcriber import Transcriber
 from voice_action_assistant.utils import (
+    copy_to_clipboard,
     init_client,
     paste_at_cursor,
     play_sound,
+    python_printer,
     transcript_contains_phrase,
     tts_transcript,
 )
@@ -151,10 +154,8 @@ class TranscribeAndSaveTextAction(TranscribeAction):
         if transcription_response.success:
             transcript = transcription_response.transcript
             cleaned_transcript = self._clean_and_save_transcript(transcript)
-            if config.COPY_TO_CLIPBOARD:
-                pyperclip.copy(cleaned_transcript)
-            if config.PASTE_AT_CURSOR:
-                paste_at_cursor()
+            copy_to_clipboard(cleaned_transcript)
+            paste_at_cursor()
             logger.info(f"Processed Transcript: {transcript}")
             play_sound(os.path.join(config.AUDIO_FILES_DIR, "action-complete-audio.wav"))
             return ActionResponse(success=True, action=self)
@@ -225,21 +226,22 @@ class TalkToGPTAction(TranscribeAction):
                     with open("live_response.md", "a") as f:
                         f.write(str_delta)
                     gpt_response_content += str_delta
+                    python_printer.print(str_delta)
 
-            logger.log("GPT", f"\n{'-'*20}\n{gpt_response_content}\n{'-'*20}\n")
+            print("\n----- LLM Response Finished -----\n")
             with open("output.txt", "a") as f:
                 f.write(f"\nGPT output:\n{gpt_response_content}")
 
-            # Copy to clipboard
-            pyperclip.copy(gpt_response_content)
-
-            if "```python" in gpt_response_content:
-                none_python_text = (
-                    gpt_response_content.split("```python")[0]
-                    + "<python code block>\n\n"
-                    + gpt_response_content.split("```python")[1].split("```")[1]
-                )
-            else:
+            # Copy relevant to clipboard
+            try:
+                copy_to_clipboard(gpt_response_content)
+                if config.EXTRACT_CODE_BLOCKS:
+                    match = re.search(r"(?<=```.*\n)(.*?)(?=```)", gpt_response_content, re.DOTALL)
+                    if match:
+                        code_block = match.group(0)
+                        copy_to_clipboard(code_block)
+            except Exception as e:
+                logger.error(e)
                 none_python_text = gpt_response_content
 
             if config.USE_TTS:
