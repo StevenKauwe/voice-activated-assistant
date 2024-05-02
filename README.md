@@ -24,8 +24,11 @@ curl -sSf https://rye-up.com/get | bash
 ## Setup
 
 1. [Install Rye](https://rye-up.com/guide/installation/)
-2. Initialize the project and install dependencies via `rye sync`.
-3. Ensure you have the necessary credentials and settings for any external services used by the actions (e.g., GPT, transcription services).
+2. Initialize the project and install dependencies via `rye sync`
+```bash
+rye sync
+```
+4. Ensure you have the necessary credentials and settings for any external services used by the actions (e.g., GPT, transcription services).
     - For now the app assumes you have a valid OpenAI API key set as an environment variable. You can add this to your .bashrc or .zshrc (or equivalent) to make it permanent.
 
 ```bash
