@@ -32,7 +32,13 @@ curl -sSf https://rye-up.com/get | bash
 export OPENAI_API_KEY="your_openai_api_key"
 ```
 
-4. Copy the example_actions_config.yml file. Add, remove, or modify actions as needed.
+4. Copy the example_actions_config.yml and settings files. Add, remove, or modify actions as needed.
+
+```bash
+cp example_actions_config.yml actions_config.yml
+cp example_settings_config.yml settings_config.yml
+
+```
 
 ## Usage
 
