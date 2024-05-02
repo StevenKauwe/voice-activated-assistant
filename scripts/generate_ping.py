@@ -68,8 +68,18 @@ def generate_bell_sound(frequencies, decay_rates, duration, sample_rate=44100):
 
     # Normalize bell sound
     bell_audio = bell_audio / np.max(np.abs(bell_audio))
+    audio = bell_audio * 2 * np.hanning(len(bell_audio) * 2)[len(bell_audio) : len(bell_audio) * 2]
 
-    return bell_audio
+    return audio
+
+
+def bell_correct_audio(frequencies, decay_rates, duration, amplitude=0.15):
+    audio = generate_bell_sound(frequencies, decay_rates, duration)
+
+    # Reduce loudness
+    audio = audio * amplitude * (2**15 - 1) / np.max(np.abs(audio))
+    audio = audio.astype(np.int16)
+    return audio
 
 
 def generate_sound_from_function(func, length, duration, sample_rate=44100):
@@ -90,17 +100,10 @@ def generate_sound_from_function(func, length, duration, sample_rate=44100):
     audio = np.sin(5 * np.pi * sequence * t)
     audio = audio * np.hanning(len(audio) * 2)[len(audio) : len(audio) * 2]
 
-    # Generate "ding" sound
-    # ding_freqs = [830, 1661, 2489, 3322]  # Frequencies for the "ding" sound
-    # ding_decays = [5, 7, 9, 11]  # Decay rates for the "ding" sound
-    # ding_duration = 1.0  # Duration of the "ding" sound
     ding_freqs = [55, 110, 165, 220]  # Frequencies for the "gong" sound
     ding_decays = [0.5, 0.75, 1, 1.25]  # Decay rates for the "gong" sound
     ding_duration = 2.0  # Duration of the "
     ding_audio = generate_bell_sound(ding_freqs, ding_decays, ding_duration)
-    ding_audio = (
-        ding_audio * 2 * np.hanning(len(ding_audio) * 2)[len(ding_audio) : len(ding_audio) * 2]
-    )
 
     # Append "bing" sound to audio data
     audio = np.concatenate((audio, ding_audio))
@@ -117,5 +120,15 @@ def generate_sound_from_function(func, length, duration, sample_rate=44100):
 audio, sample_rate = generate_sound_from_function(my_fn, 510, 2, 44100)
 save_to_wav(audio, sample_rate, "src/audio_files/startup-audio.wav")
 
-audio, sample_rate = generate_sound_from_function(my_fn, 510, 0, 44100)
-save_to_wav(audio[::-1], sample_rate, "src/audio_files/shutdown-audio.wav")
+bell_audio = bell_correct_audio([55, 110, 165, 220], [5, 7, 9, 11], 2.0)
+save_to_wav(
+    bell_audio[len(bell_audio) // 2 :: -1],
+    44100,
+    "src/audio_files/shutdown-audio.wav",
+)
+
+save_to_wav(
+    bell_correct_audio([830, 1661, 2489, 3322], [0.5, 0.75, 1, 1.25], 1.0, 0.05),
+    44100,
+    "src/audio_files/action-complete-audio.wav",
+)

@@ -9,12 +9,13 @@ from loguru import logger
 from pydub import AudioSegment
 from scipy.io.wavfile import write
 
+from voice_action_assistant.config import config
 from voice_action_assistant.transcriber import Transcriber
 from voice_action_assistant.utils import timer_decorator
 
 
 class AudioRecorder:
-    def __init__(self, name="AudioRecorder", max_seconds=600):
+    def __init__(self, name="AudioRecorder", max_seconds=config.MAX_AUDIO_LENGTH_SECONDS):
         self.name = name
         self.max_seconds = max_seconds
         self.is_recording = False

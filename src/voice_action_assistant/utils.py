@@ -1,9 +1,13 @@
 import math
 import os
 import re
+import sys
 import time
+from collections import deque
+from enum import Enum
 from pathlib import Path
 from textwrap import dedent
+from threading import Lock
 
 import numpy as np
 import pyautogui
@@ -175,11 +179,25 @@ def gpt_post_process_transcript(transcript: str):
 
 
 def paste_at_cursor():
-    pyautogui.keyDown("command")
-    # Press the 'v' key
-    pyautogui.press("v")
-    # Release the 'command' key
-    pyautogui.keyUp("command")
+    """
+    Paste the text at the cursor position.
+    This requires system permissions to work.
+    This is also buggy and may not work on all systems.
+    Don't enable this unless you know are certain you want to use it.
+
+    Alternative would be "write at cursor" which would be more reliable.
+    This would still require system permissions.
+    """
+    if config.PASTE_AT_CURSOR:
+        pyautogui.keyDown("command")
+        pyautogui.press("v")
+        pyautogui.keyUp("command")
+
+
+def copy_to_clipboard(text: str):
+    if config.COPY_TO_CLIPBOARD:
+        pyperclip.copy(text)
+        logger.info("Text copied to clipboard.")
 
 
 def tts_transcript(transcript: str):
@@ -214,3 +232,48 @@ def stt_audio_file(file_name: str):
         transcript = openai_client.audio.transcriptions.create(model="whisper-1", file=f)
     transcript_text = transcript.text
     return transcript_text
+
+
+class ColorEnum(str, Enum):
+    RED = "\033[91m"
+    GREEN = "\033[92m"
+    YELLOW = "\033[93m"
+    BLUE = "\033[94m"
+    MAGENTA = "\033[95m"
+    CYAN = "\033[96m"
+    RESET = "\033[0m"
+
+
+class StreamColorPrinter:
+    def __init__(self, start_trigger: str, end_trigger: str, buffer_size: int = 100):
+        self.start_trigger = start_trigger
+        self.end_trigger = end_trigger
+        self.buffer_size = buffer_size
+        self.buffer = deque(maxlen=buffer_size)
+        self.print_lock = Lock()
+
+        self.base_color = ColorEnum.MAGENTA.value
+        self.code_block_color = ColorEnum.CYAN.value
+        self.current_color = self.base_color
+
+    def _update_color(self, word: str):
+        # Update the buffer and check for triggers
+        self.buffer.append(word)
+        buffer_content = "".join(self.buffer)
+
+        if self.start_trigger in buffer_content and self.current_color == self.base_color:
+            self.current_color = self.code_block_color
+        elif self.end_trigger in buffer_content and self.current_color == self.code_block_color:
+            self.current_color = self.base_color
+        else:
+            return
+        self.buffer.clear()
+
+    def print(self, word: str):
+        with self.print_lock:
+            self._update_color(word)
+            sys.stdout.write(f"{self.current_color}{word}{ColorEnum.RESET.value}")
+            sys.stdout.flush()
+
+
+python_printer = StreamColorPrinter(start_trigger="```", end_trigger="```")

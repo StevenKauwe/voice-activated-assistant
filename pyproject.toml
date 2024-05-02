@@ -11,6 +11,8 @@ dependencies = [
   "openai",
   "openai-whisper",
   "pyautogui",
+  "pydantic",
+  "pydantic-settings",
   "pydub",
   "pygame",
   "pyperclip",
