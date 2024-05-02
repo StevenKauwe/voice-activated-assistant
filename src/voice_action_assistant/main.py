@@ -119,10 +119,7 @@ class VoiceControlledRecorder:
             action_performed = self.action_controller.check_and_perform_actions(transcription)
             if action_performed:
                 logger.info(
-                    f"Detected audio event for `{action_performed}`, clearing signal queue"
-                )
-                logger.info(
-                    "Action is complete and signal queue is cleared... Awaiting next command."
+                    f"Action '{action_performed}' is complete and signal queue is cleared... Awaiting next command."
                 )
                 self.audio_detector.recorder.refresh_signal_queue()
 

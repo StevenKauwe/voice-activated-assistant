@@ -156,6 +156,7 @@ class TranscribeAndSaveTextAction(TranscribeAction):
             if config.PASTE_AT_CURSOR:
                 paste_at_cursor()
             logger.info(f"Processed Transcript: {transcript}")
+            play_sound(os.path.join(config.AUDIO_FILES_DIR, "action-complete-audio.wav"))
             return ActionResponse(success=True, action=self)
         else:
             return ActionResponse(success=False, action=self)
@@ -243,6 +244,8 @@ class TalkToGPTAction(TranscribeAction):
 
             if config.USE_TTS:
                 tts_transcript(none_python_text)
+
+            play_sound(os.path.join(config.AUDIO_FILES_DIR, "action-complete-audio.wav"))
             return ActionResponse(success=True, action=self)
         else:
             return ActionResponse(success=False, action=self)
