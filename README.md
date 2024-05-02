@@ -25,10 +25,12 @@ curl -sSf https://rye-up.com/get | bash
 
 1. [Install Rye](https://rye-up.com/guide/installation/)
 2. Initialize the project and install dependencies via `rye sync`
+
 ```bash
 rye sync
 ```
-4. Ensure you have the necessary credentials and settings for any external services used by the actions (e.g., GPT, transcription services).
+
+3. Ensure you have the necessary credentials and settings for any external services used by the actions (e.g., GPT, transcription services).
     - For now the app assumes you have a valid OpenAI API key set as an environment variable. You can add this to your .bashrc or .zshrc (or equivalent) to make it permanent.
 
 ```bash
@@ -52,7 +54,7 @@ To start the voice-activated assistant, run EITHER of the following command in y
 rye run voice-assistant
 
 # I also included a shorter version of the same command (see .toml to customize)
-ryo run va
+rye run va
 ```
 
 Once running, the application will listen for the wake phrase and then await further voice commands to trigger registered actions.
