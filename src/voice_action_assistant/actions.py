@@ -236,9 +236,10 @@ class TalkToGPTAction(TranscribeAction):
             try:
                 copy_to_clipboard(gpt_response_content)
                 if config.EXTRACT_CODE_BLOCKS:
-                    match = re.search(r"(?<=```.*\n)(.*?)(?=```)", gpt_response_content, re.DOTALL)
+                    match = re.search(r"```.*\n(.*?)```", gpt_response_content, re.DOTALL)
                     if match:
-                        code_block = match.group(0)
+                        # Get the first group instead of the whole match
+                        code_block = match.group(1)
                         copy_to_clipboard(code_block)
             except Exception as e:
                 logger.error(e)
