@@ -1,0 +1,39 @@
+# The ID of the model to use for generating responses.
+# In this case, it's set to "gpt-4-turbo", which is a powerful language model developed by OpenAI.
+MODEL_ID: "gpt-4-turbo"
+
+# Whether to automatically copy the generated responses to the clipboard.
+# If this is set to true, you can easily paste the responses into other applications.
+COPY_TO_CLIPBOARD: true
+
+# Whether to extract the first code block from the generated response to your clipboard.
+# If this is set to true, the system will only grab what's in triple backticks (```) and ignore everything else in the response.
+EXTRACT_CODE_BLOCKS: true
+
+# Whether to run the system locally.
+# If this is set to true, the system will run on your local machine. If it's false, it might run on a remote server or in the cloud.
+LOCAL: true
+
+# The maximum length of audio recordings, in seconds.
+# This setting is used when the system is recording audio input.
+MAX_AUDIO_LENGTH_SECONDS: 3600
+
+# Whether to use text-to-speech (TTS) to read out the generated responses.
+# If this is set to true, the system will use a TTS engine to convert the responses to speech.
+USE_TTS: false
+
+# The speed at which to play back the audio.
+# This is a multiplier, so 1.0 is normal speed, 2.0 is twice as fast, 0.5 is half as fast, etc.
+AUDIO_SPEED: 1.25
+
+# The directory where audio files are stored.
+# This setting is used when the system needs to save or load audio files.
+AUDIO_FILES_DIR: "src/audio_files"
+
+# The directory where prompts for the language model are stored.
+# These prompts are used to guide the language model's responses.
+LLM_ACTION_PROMPTS_DIR: "src/llm-action-prompts"
+
+# Whether to paste the generated responses at the cursor position.
+# If this is set to true, the responses will be inserted at the current cursor position in the active application.
+PASTE_AT_CURSOR: false

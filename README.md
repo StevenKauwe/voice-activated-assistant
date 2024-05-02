@@ -65,8 +65,12 @@ You can register additional actions by extending the `Action` class and adding t
 
 ## Customization
 
-To customize actions or add new ones, modify the `VoiceControlledRecorder.register_actions` method.
-Create instances of your action classes and register them with the `ActionController`.
+To customize actions or add new ones, modify the `actions_config.yml` file.
+Updates to the action config will create new instances of your action classes and register them in the `actions_config.yml` file.
+
+## Settings
+
+To adjust the application's behavior, modify the `settings_config.yml` file. For example, you can change the model ID, enable or disable copying to the clipboard, adjust the maximum audio length, and more.
 
 ## Logging
 

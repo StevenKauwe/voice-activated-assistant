@@ -159,3 +159,4 @@ live_response.md
 # let's not push the lock file
 *.lock
 actions_config.yml
+settings_config.yml
