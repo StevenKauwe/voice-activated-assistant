@@ -30,9 +30,9 @@ threading.Thread(
 def logger_init(level="INFO"):
     logger.remove()
     # Define a custom log level
-    logger.level("GPT", no=35, color="<fg #a388f2>", icon="🤖")
+    logger.level("LLM", no=35, color="<fg #a388f2>", icon="🤖")
     # Add a file handler
-    logger.add("gpt_logs.log", level="GPT")
+    logger.add("llm_logs.log", level="LLM")
     logger.add(sys.stderr, level=level)
 
 

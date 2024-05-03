@@ -10,7 +10,7 @@ It uses a combination of audio recording, transcription, and action handling to 
 - Wake phrase detection to start listening for commands.
 - Transcription of audio to text for command recognition.
 - Customizable actions that can be triggered by voice commands.
-- Integration with external services for advanced functionalities (e.g., GPT, transcription services).
+- Integration with external services for advanced functionalities (e.g., LLM, transcription services).
 
 ## Requirements
 
@@ -30,7 +30,7 @@ curl -sSf https://rye-up.com/get | bash
 rye sync
 ```
 
-3. Ensure you have the necessary credentials and settings for any external services used by the actions (e.g., GPT, transcription services).
+3. Ensure you have the necessary credentials and settings for any external services used by the actions (e.g., LLM, transcription services).
     - For now the app assumes you have a valid OpenAI API key set as an environment variable. You can add this to your .bashrc or .zshrc (or equivalent) to make it permanent.
 
 ```bash
@@ -69,7 +69,7 @@ Each action is associated with a specific phrase that, when detected in the tran
 The following actions are included by default:
 
 - `TranscribeAndPasteTextAction`: Transcribes spoken text and pastes it into a text field.
-- `TalkToGPTAction`: Sends the transcribed text to GPT for processing and handles the response.
+- `TalkToLanguageModelAction`: Sends the transcribed text to LLM for processing and handles the response.
 - `UpdateSettingsAction`: Updates settings based on voice commands.
 
 You can register additional actions by extending the `Action` class and adding them to the `ActionController`.

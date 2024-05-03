@@ -11,12 +11,12 @@ actions:
     end_phrase: "finish update"
     prompt: "Update system settings based on user commands."
     
-  - name: "general gpt"
-    class: "TalkToGPTAction"
+  - name: "general llm"
+    class: "TalkToLanguageModelAction"
     start_phrase: "hi computer"
     end_phrase: "see ya"
     prompt: |
-      # General GPT
+      # General LLM
 
       Please provide correct answers that are concise but complete.
       Similary, when editing or writing english text, keep it short and to the point.
@@ -34,7 +34,7 @@ actions:
       Assume the user wants advanced pythonic solutions.
 
   - name: "write ticket"
-    class: "TalkToGPTAction"
+    class: "TalkToLanguageModelAction"
     start_phrase: "new ticket"
     end_phrase: "see ya"
     prompt: |
@@ -69,7 +69,7 @@ actions:
       ```
 
   - name: "write pull request description"
-    class: "TalkToGPTAction"
+    class: "TalkToLanguageModelAction"
     start_phrase: "new pull request"
     end_phrase: "see ya"
     prompt: |

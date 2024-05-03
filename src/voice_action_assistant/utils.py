@@ -142,7 +142,7 @@ def init_client():
     return openai_client
 
 
-def gpt_post_process_transcript(transcript: str):
+def llm_post_process_transcript(transcript: str):
     system_prompt = dedent(
         f"""\
         context from user:
@@ -167,7 +167,7 @@ def gpt_post_process_transcript(transcript: str):
     response_text = ""
 
     with open("output.txt", "a") as f:
-        f.write("\nGPT output:\n")
+        f.write("\nLLM output:\n")
     for chunk in completion:
         str_delta = chunk.choices[0].delta.content
         if str_delta:

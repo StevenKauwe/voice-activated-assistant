@@ -181,7 +181,7 @@ class TranscribeAndSaveTextAction(TranscribeAction):
         return self.action_name or self.__class__.__name__
 
 
-class TalkToGPTAction(TranscribeAction):
+class TalkToLanguageModelAction(TranscribeAction):
     def __init__(
         self,
         start_action_phrase: str,
@@ -208,7 +208,7 @@ class TalkToGPTAction(TranscribeAction):
             transcript = transcription_response.transcript
             cleaned_transcript = self._clean_and_save_transcript(transcript)
 
-            # GPT Logic
+            # LLM Logic
             system_prompt = dedent(
                 f"""\
                 {self.system_message}
@@ -230,35 +230,37 @@ class TalkToGPTAction(TranscribeAction):
                 stream=True,
             )
 
-            gpt_response_content = ""
+            llm_response_content = ""
 
             # open the file in append mode
+
+            print("\n----- LLM Response Started  -----\n")
             with open("live_response.md", "w") as f:
-                f.write("# GPT RESPONSE\n\n")
+                f.write("# LLM RESPONSE\n\n")
             for chunk in completion:
                 str_delta = chunk.choices[0].delta.content
                 if str_delta:
                     with open("live_response.md", "a") as f:
                         f.write(str_delta)
-                    gpt_response_content += str_delta
+                    llm_response_content += str_delta
                     python_printer.print(str_delta)
 
             print("\n----- LLM Response Finished -----\n")
             with open("output.txt", "a") as f:
-                f.write(f"\nGPT output:\n{gpt_response_content}")
+                f.write(f"\nLLM output:\n{llm_response_content}")
 
             # Copy relevant to clipboard
             try:
-                copy_to_clipboard(gpt_response_content)
+                copy_to_clipboard(llm_response_content)
                 if config.EXTRACT_CODE_BLOCKS:
-                    match = re.search(r"```.*\n(.*?)```", gpt_response_content, re.DOTALL)
-                    if match:
-                        # Get the first group instead of the whole match
-                        code_block = match.group(1)
-                        copy_to_clipboard(code_block)
+                    code_blocks = re.findall(r"```.*?\n(.*?)```", llm_response_content, re.DOTALL)
+                    print("Code Blocks: ", code_blocks)
+                    if code_blocks:
+                        formatted_code_blocks = "\n---\n".join(code_blocks)
+                        copy_to_clipboard(formatted_code_blocks)
             except Exception as e:
                 logger.error(e)
-                none_python_text = gpt_response_content
+                none_python_text = llm_response_content
 
             if config.USE_TTS:
                 tts_transcript(none_python_text)
@@ -346,7 +348,7 @@ class UpdateSettingsAction(TranscribeAction):
 class ActionFactory:
     def __init__(self):
         self.action_classes = {
-            "TalkToGPTAction": TalkToGPTAction,
+            "TalkToLanguageModelAction": TalkToLanguageModelAction,
             "TranscribeAndSaveTextAction": TranscribeAndSaveTextAction,
             "UpdateSettingsAction": UpdateSettingsAction,
         }
