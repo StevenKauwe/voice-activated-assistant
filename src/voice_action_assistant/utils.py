@@ -14,12 +14,19 @@ import pyautogui
 import pygame
 import pyperclip
 import torch
+import yaml
 from loguru import logger
 from openai import OpenAI
 from pydub import AudioSegment
 from pygame import mixer
 
 from voice_action_assistant.config import config
+
+
+def load_config_yml(file_path: str):
+    with open(file_path, "r") as file:
+        config = yaml.safe_load(file)
+    return config
 
 
 def create_regex_pattern(phrase):
@@ -142,7 +149,7 @@ def init_client():
     return openai_client
 
 
-def gpt_post_process_transcript(transcript: str):
+def llm_post_process_transcript(transcript: str):
     system_prompt = dedent(
         f"""\
         context from user:
@@ -167,7 +174,7 @@ def gpt_post_process_transcript(transcript: str):
     response_text = ""
 
     with open("output.txt", "a") as f:
-        f.write("\nGPT output:\n")
+        f.write("\nLLM output:\n")
     for chunk in completion:
         str_delta = chunk.choices[0].delta.content
         if str_delta:
@@ -244,6 +251,10 @@ class ColorEnum(str, Enum):
     RESET = "\033[0m"
 
 
+def color_text(text: str, color: ColorEnum) -> str:
+    return f"{color.value}{text}{ColorEnum.RESET.value}"
+
+
 class StreamColorPrinter:
     def __init__(self, start_trigger: str, end_trigger: str, buffer_size: int = 100):
         self.start_trigger = start_trigger
@@ -272,7 +283,8 @@ class StreamColorPrinter:
     def print(self, word: str):
         with self.print_lock:
             self._update_color(word)
-            sys.stdout.write(f"{self.current_color}{word}{ColorEnum.RESET.value}")
+            colored_word = color_text(word, ColorEnum(self.current_color))
+            sys.stdout.write(colored_word)
             sys.stdout.flush()
 
 

@@ -6,14 +6,16 @@ from typing import Optional
 
 import pyperclip
 from loguru import logger
-from openai import OpenAI
 
 from voice_action_assistant.config import config
 from voice_action_assistant.recorder import AudioRecorder
 from voice_action_assistant.transcriber import Transcriber
 from voice_action_assistant.utils import (
+    ColorEnum,
+    color_text,
     copy_to_clipboard,
     init_client,
+    load_config_yml,
     paste_at_cursor,
     play_sound,
     python_printer,
@@ -106,6 +108,8 @@ class TranscribeAction(Action):
         stop_action_phrase: str,
         audio_recorder: AudioRecorder,
         transcriber: Transcriber,
+        action_name: str | None = None,
+        system_message: str | None = None,
     ):
         # An empty phrase as this action is composed of sub-actions
         super().__init__("")
@@ -116,6 +120,8 @@ class TranscribeAction(Action):
         self.transcriber = transcriber
         self.audio_recorder = audio_recorder
         self.in_progress = False
+        self.action_name = action_name
+        self.system_message = system_message
 
     def _action_logic(self, transcription_response) -> TranscribeActionResponse:
         raise NotImplementedError
@@ -146,8 +152,17 @@ class TranscribeAndSaveTextAction(TranscribeAction):
         stop_action_phrase: str,
         audio_recorder: AudioRecorder,
         transcriber: Transcriber,
+        action_name: str | None = None,
+        system_message: str | None = None,
     ):
-        super().__init__(start_action_phrase, stop_action_phrase, audio_recorder, transcriber)
+        super().__init__(
+            start_action_phrase,
+            stop_action_phrase,
+            audio_recorder,
+            transcriber,
+            action_name,
+            system_message,
+        )
 
     def _action_logic(self, transcription_response: TranscribeActionResponse) -> ActionResponse:
         logger.debug(f"Transcription response for Paste action: {transcription_response}")
@@ -164,10 +179,10 @@ class TranscribeAndSaveTextAction(TranscribeAction):
 
     @property
     def name(self):
-        return self.__class__.__name__
+        return self.action_name or self.__class__.__name__
 
 
-class TalkToGPTAction(TranscribeAction):
+class TalkToLanguageModelAction(TranscribeAction):
     def __init__(
         self,
         start_action_phrase: str,
@@ -177,8 +192,9 @@ class TalkToGPTAction(TranscribeAction):
         action_name: str | None = None,
         system_message: str | None = None,
     ):
-        super().__init__(start_action_phrase, stop_action_phrase, audio_recorder, transcriber)
-        self.action_name = action_name
+        super().__init__(
+            start_action_phrase, stop_action_phrase, audio_recorder, transcriber, action_name
+        )
         default_system_message = dedent(
             """\
             Please provide correct answers that are concise but complete.
@@ -193,7 +209,7 @@ class TalkToGPTAction(TranscribeAction):
             transcript = transcription_response.transcript
             cleaned_transcript = self._clean_and_save_transcript(transcript)
 
-            # GPT Logic
+            # LLM Logic
             system_prompt = dedent(
                 f"""\
                 {self.system_message}
@@ -215,35 +231,37 @@ class TalkToGPTAction(TranscribeAction):
                 stream=True,
             )
 
-            gpt_response_content = ""
+            llm_response_content = ""
 
             # open the file in append mode
+
+            print("\n----- LLM Response Started  -----\n")
             with open("live_response.md", "w") as f:
-                f.write("# GPT RESPONSE\n\n")
+                f.write("# LLM RESPONSE\n\n")
             for chunk in completion:
                 str_delta = chunk.choices[0].delta.content
                 if str_delta:
                     with open("live_response.md", "a") as f:
                         f.write(str_delta)
-                    gpt_response_content += str_delta
+                    llm_response_content += str_delta
                     python_printer.print(str_delta)
 
             print("\n----- LLM Response Finished -----\n")
             with open("output.txt", "a") as f:
-                f.write(f"\nGPT output:\n{gpt_response_content}")
+                f.write(f"\nLLM output:\n{llm_response_content}")
 
             # Copy relevant to clipboard
             try:
-                copy_to_clipboard(gpt_response_content)
+                copy_to_clipboard(llm_response_content)
                 if config.EXTRACT_CODE_BLOCKS:
-                    match = re.search(r"```.*\n(.*?)```", gpt_response_content, re.DOTALL)
-                    if match:
-                        # Get the first group instead of the whole match
-                        code_block = match.group(1)
-                        copy_to_clipboard(code_block)
+                    code_blocks = re.findall(r"```.*?\n(.*?)```", llm_response_content, re.DOTALL)
+                    print("Code Blocks: ", code_blocks)
+                    if code_blocks:
+                        formatted_code_blocks = "\n---\n".join(code_blocks)
+                        copy_to_clipboard(formatted_code_blocks)
             except Exception as e:
                 logger.error(e)
-                none_python_text = gpt_response_content
+                none_python_text = llm_response_content
 
             if config.USE_TTS:
                 tts_transcript(none_python_text)
@@ -258,31 +276,37 @@ class TalkToGPTAction(TranscribeAction):
         return self.action_name or self.__class__.__name__
 
 
-class UpdateSettingsAction(TranscribeAction):
+class AssistantSettingsAction(TranscribeAction):
     def __init__(
         self,
         start_action_phrase: str,
         stop_action_phrase: str,
         audio_recorder: AudioRecorder,
         transcriber: Transcriber,
-        openai_client: OpenAI,
+        action_name: str | None = None,
+        system_message: str | None = None,
     ):
-        super().__init__(start_action_phrase, stop_action_phrase, audio_recorder, transcriber)
-        self.openai_client = openai_client
+        super().__init__(
+            start_action_phrase,
+            stop_action_phrase,
+            audio_recorder,
+            transcriber,
+            action_name,
+            system_message,
+        )
 
     def _action_logic(self, transcription_response: TranscribeActionResponse) -> ActionResponse:
+        openai_client = init_client()
         cleaned_transcript = self._clean_and_save_transcript(transcription_response.transcript)
         try:
-            config_attributes = [attr for attr in dir(config) if not attr.startswith("__")]
+            config_attributes = load_config_yml("settings_config.yml")
             preprompt = f"""
                 Update config settings based on config attributes.
-                Return json object with updated settings.
-                Do not include any other response, just the json object.
-                This is effectively "function calling".
+                Return json object with updated settings or a specific indicator for viewing settings.
                 Assume values if not given e.g. "enable internet" -> "USE_INTERNET=True"
+                If the user wants to view settings, return 'VIEW_SETTINGS'.
 
-                
-                Only use the Attributes: {', '.join(config_attributes)}
+                Only use the Attributes: {config_attributes}
 
                 Example Response:
                 ```json
@@ -291,7 +315,7 @@ class UpdateSettingsAction(TranscribeAction):
                 }}
                 ```
             """
-            response = self.openai_client.chat.completions.create(
+            response = openai_client.chat.completions.create(
                 model=config.MODEL_ID,
                 messages=[
                     {"role": "system", "content": preprompt},
@@ -305,12 +329,17 @@ class UpdateSettingsAction(TranscribeAction):
             )
             response_text = response.choices[0].message.content
             logger.info(f"Response: {response_text}")
-            if "```json" in response_text:
+            if "VIEW_SETTINGS" in response_text:
+                # Print current settings
+                current_settings = {attr: getattr(config, attr) for attr in config_attributes}
+                print("Current Settings:", json.dumps(current_settings, indent=4))
+                return ActionResponse(self, True)
+            elif "```json" in response_text:
                 response_text = response_text.split("```json")[1].split("```")[0]
-            response_json = json.loads(response_text)
-            for key, value in response_json.items():
-                config.update(key, value)
-            return ActionResponse(self, True)
+                response_json = json.loads(response_text)
+                for key, value in response_json.items():
+                    config.update(key, value)
+                return ActionResponse(self, True)
         except Exception as e:
             logger.error(e)
             return ActionResponse(self, False)
@@ -318,3 +347,60 @@ class UpdateSettingsAction(TranscribeAction):
     @property
     def name(self):
         return self.__class__.__name__
+
+
+class ActionFactory:
+    def __init__(self):
+        self.action_classes = {
+            "TalkToLanguageModelAction": TalkToLanguageModelAction,
+            "TranscribeAndSaveTextAction": TranscribeAndSaveTextAction,
+            "AssistantSettingsAction": AssistantSettingsAction,
+        }
+        self.loaded_actions = []
+
+    def generate_table(self):
+        headers = ["Action Name", "Start Phrase", "End Phrase"]
+        table_data = [
+            [config["name"], config["start_phrase"], config["end_phrase"]]
+            for config in self.loaded_actions
+        ]
+        max_lengths = [max(len(x) for x in col) for col in zip(*([headers] + table_data))]
+
+        line = (
+            "| "
+            + " | ".join(f"{header:<{length}}" for header, length in zip(headers, max_lengths))
+            + " |"
+        )
+        separator = "|-" + "-|-".join("-" * length for length in max_lengths) + "-|"
+        boarder_separator = "|=" + "===".join("=" * length for length in max_lengths) + "=|"
+        table_name = "Loaded Actions"
+        table_title = f"| {table_name:^{len(line) - 4}} |"
+
+        table = [boarder_separator, table_title, boarder_separator, line, separator]
+        for row in table_data:
+            table.append(
+                "| "
+                + " | ".join(f"{cell:<{length}}" for cell, length in zip(row, max_lengths))
+                + " |"
+            )
+        table.append(boarder_separator)
+
+        return "\n" + color_text("\n".join(table), ColorEnum.CYAN)
+
+    def pretty_print_actions_to_console(self):
+        logger.info(self.generate_table())
+
+    def get_action(self, action_config, recorder, transcriber):
+        action_class = self.action_classes.get(action_config["class"])
+        if not action_class:
+            logger.error(f"Action class {action_config['class']} not found")
+            return None
+        self.loaded_actions.append(action_config)
+        return action_class(
+            start_action_phrase=action_config["start_phrase"],
+            stop_action_phrase=action_config["end_phrase"],
+            audio_recorder=recorder,
+            transcriber=transcriber,
+            action_name=action_config["name"],
+            system_message=action_config["prompt"],
+        )

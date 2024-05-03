@@ -33,5 +33,11 @@ class Settings(BaseSettings):
     ) -> Tuple[PydanticBaseSettingsSource, ...]:
         return (YamlConfigSettingsSource(settings_cls),)
 
+    def update(self, attr_name: str, new_value):
+        if hasattr(self, attr_name):
+            setattr(self, attr_name, new_value)
+        else:
+            raise ValueError(f"No such attribute: {attr_name}")
+
 
 config = Settings()
