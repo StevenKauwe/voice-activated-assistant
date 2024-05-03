@@ -14,12 +14,19 @@ import pyautogui
 import pygame
 import pyperclip
 import torch
+import yaml
 from loguru import logger
 from openai import OpenAI
 from pydub import AudioSegment
 from pygame import mixer
 
 from voice_action_assistant.config import config
+
+
+def load_config_yml(file_path: str):
+    with open(file_path, "r") as file:
+        config = yaml.safe_load(file)
+    return config
 
 
 def create_regex_pattern(phrase):

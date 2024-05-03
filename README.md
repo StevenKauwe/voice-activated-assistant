@@ -70,7 +70,7 @@ The following actions are included by default:
 
 - `TranscribeAndPasteTextAction`: Transcribes spoken text and pastes it into a text field.
 - `TalkToLanguageModelAction`: Sends the transcribed text to LLM for processing and handles the response.
-- `UpdateSettingsAction`: Updates settings based on voice commands.
+- `AssistantSettingsAction`: Updates settings based on voice commands.
 
 You can register additional actions by extending the `Action` class and adding them to the `ActionController`.
 

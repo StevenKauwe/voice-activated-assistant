@@ -15,6 +15,7 @@ from voice_action_assistant.utils import (
     color_text,
     copy_to_clipboard,
     init_client,
+    load_config_yml,
     paste_at_cursor,
     play_sound,
     python_printer,
@@ -275,7 +276,7 @@ class TalkToLanguageModelAction(TranscribeAction):
         return self.action_name or self.__class__.__name__
 
 
-class UpdateSettingsAction(TranscribeAction):
+class AssistantSettingsAction(TranscribeAction):
     def __init__(
         self,
         start_action_phrase: str,
@@ -298,16 +299,14 @@ class UpdateSettingsAction(TranscribeAction):
         openai_client = init_client()
         cleaned_transcript = self._clean_and_save_transcript(transcription_response.transcript)
         try:
-            config_attributes = [attr for attr in dir(config) if not attr.startswith("__")]
+            config_attributes = load_config_yml("settings_config.yml")
             preprompt = f"""
                 Update config settings based on config attributes.
-                Return json object with updated settings.
-                Do not include any other response, just the json object.
-                This is effectively "function calling".
+                Return json object with updated settings or a specific indicator for viewing settings.
                 Assume values if not given e.g. "enable internet" -> "USE_INTERNET=True"
+                If the user wants to view settings, return 'VIEW_SETTINGS'.
 
-                
-                Only use the Attributes: {', '.join(config_attributes)}
+                Only use the Attributes: {config_attributes}
 
                 Example Response:
                 ```json
@@ -330,12 +329,17 @@ class UpdateSettingsAction(TranscribeAction):
             )
             response_text = response.choices[0].message.content
             logger.info(f"Response: {response_text}")
-            if "```json" in response_text:
+            if "VIEW_SETTINGS" in response_text:
+                # Print current settings
+                current_settings = {attr: getattr(config, attr) for attr in config_attributes}
+                print("Current Settings:", json.dumps(current_settings, indent=4))
+                return ActionResponse(self, True)
+            elif "```json" in response_text:
                 response_text = response_text.split("```json")[1].split("```")[0]
-            response_json = json.loads(response_text)
-            for key, value in response_json.items():
-                config.update(key, value)
-            return ActionResponse(self, True)
+                response_json = json.loads(response_text)
+                for key, value in response_json.items():
+                    config.update(key, value)
+                return ActionResponse(self, True)
         except Exception as e:
             logger.error(e)
             return ActionResponse(self, False)
@@ -350,7 +354,7 @@ class ActionFactory:
         self.action_classes = {
             "TalkToLanguageModelAction": TalkToLanguageModelAction,
             "TranscribeAndSaveTextAction": TranscribeAndSaveTextAction,
-            "UpdateSettingsAction": UpdateSettingsAction,
+            "AssistantSettingsAction": AssistantSettingsAction,
         }
         self.loaded_actions = []
 

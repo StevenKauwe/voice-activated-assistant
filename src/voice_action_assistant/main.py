@@ -5,7 +5,6 @@ import threading
 import time
 from typing import Dict
 
-import yaml
 from loguru import logger
 
 # Assuming the existence of Action classes in actions.py
@@ -13,7 +12,7 @@ from voice_action_assistant.actions import Action, ActionFactory
 from voice_action_assistant.config import config
 from voice_action_assistant.recorder import AudioDetector, AudioRecorder
 from voice_action_assistant.transcriber import Transcriber
-from voice_action_assistant.utils import play_sound, transcript_contains_phrase
+from voice_action_assistant.utils import load_config_yml, play_sound, transcript_contains_phrase
 
 # Start a new thread to play the startup audio
 threading.Thread(
@@ -66,8 +65,7 @@ class VoiceControlledRecorder:
         self.action_factory = ActionFactory()
 
     def load_actions_from_yaml(self, yaml_file: str):
-        with open(yaml_file, "r") as file:
-            actions_config = yaml.safe_load(file)
+        actions_config = load_config_yml(yaml_file)
 
         for action_config in actions_config["actions"]:
             action = self.action_factory.get_action(action_config, self.recorder, self.transcriber)

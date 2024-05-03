@@ -1,17 +1,17 @@
 actions:
-  - name: "transcribe_text"
+  - name: "Transcribe Text"
     class: "TranscribeAndSaveTextAction"
-    start_phrase: "start transcribing"
-    end_phrase: "stop transcribing"
+    start_phrase: "hi friend"
+    end_phrase: "see ya"
     prompt: "Transcribe spoken words into text."
       
-  - name: "update_settings"
-    class: "UpdateSettingsAction"
+  - name: "Update Settings"
+    class: "AssistantSettingsAction"
     start_phrase: "update settings"
-    end_phrase: "finish update"
-    prompt: "Update system settings based on user commands."
+    end_phrase: "see ya"
+    prompt: "Update or show me system settings based on user commands."
     
-  - name: "general llm"
+  - name: "General Purpose LLM"
     class: "TalkToLanguageModelAction"
     start_phrase: "hi computer"
     end_phrase: "see ya"
@@ -33,7 +33,7 @@ actions:
       Use pydantic models for data validation.
       Assume the user wants advanced pythonic solutions.
 
-  - name: "write ticket"
+  - name: "Write JIRA Ticket"
     class: "TalkToLanguageModelAction"
     start_phrase: "new ticket"
     end_phrase: "see ya"
@@ -68,7 +68,7 @@ actions:
 
       ```
 
-  - name: "write pull request description"
+  - name: "Write PR Description"
     class: "TalkToLanguageModelAction"
     start_phrase: "new pull request"
     end_phrase: "see ya"
