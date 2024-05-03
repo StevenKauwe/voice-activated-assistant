@@ -244,6 +244,10 @@ class ColorEnum(str, Enum):
     RESET = "\033[0m"
 
 
+def color_text(text: str, color: ColorEnum) -> str:
+    return f"{color.value}{text}{ColorEnum.RESET.value}"
+
+
 class StreamColorPrinter:
     def __init__(self, start_trigger: str, end_trigger: str, buffer_size: int = 100):
         self.start_trigger = start_trigger
@@ -272,7 +276,8 @@ class StreamColorPrinter:
     def print(self, word: str):
         with self.print_lock:
             self._update_color(word)
-            sys.stdout.write(f"{self.current_color}{word}{ColorEnum.RESET.value}")
+            colored_word = color_text(word, ColorEnum(self.current_color))
+            sys.stdout.write(colored_word)
             sys.stdout.flush()
 
 

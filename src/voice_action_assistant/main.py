@@ -9,15 +9,10 @@ import yaml
 from loguru import logger
 
 # Assuming the existence of Action classes in actions.py
-from voice_action_assistant.actions import (
-    Action,
-    TalkToGPTAction,
-    TranscribeAndSaveTextAction,
-    UpdateSettingsAction,
-)
+from voice_action_assistant.actions import Action, ActionFactory
 from voice_action_assistant.config import config
 from voice_action_assistant.recorder import AudioDetector, AudioRecorder
-from voice_action_assistant.transcriber import Transcriber, init_client
+from voice_action_assistant.transcriber import Transcriber
 from voice_action_assistant.utils import play_sound, transcript_contains_phrase
 
 # Start a new thread to play the startup audio
@@ -68,43 +63,22 @@ class VoiceControlledRecorder:
         self.transcriber = Transcriber()
         self.audio_detector = AudioDetector(self.wake_audio_recorder, self.transcriber)
         self.action_controller = ActionController()
+        self.action_factory = ActionFactory()
 
     def load_actions_from_yaml(self, yaml_file: str):
         with open(yaml_file, "r") as file:
             actions_config = yaml.safe_load(file)
 
-        for action in actions_config["actions"]:
-            new_action = TalkToGPTAction(
-                start_action_phrase=action["start_phrase"],
-                stop_action_phrase=action["end_phrase"],
-                audio_recorder=self.recorder,
-                transcriber=self.transcriber,
-                action_name=action["name"],
-                system_message=action["prompt"],
-            )
-            self.action_controller.register_action(new_action)
-            logger.info(f"Registered action: {action['name']}")
-
-    def register_base_actions(self):
-        transcribe_action = TranscribeAndSaveTextAction(
-            "hi friend", "see ya", self.recorder, self.transcriber
-        )
-        update_settings_action = UpdateSettingsAction(
-            "update settings",
-            "finish update",
-            self.recorder,
-            self.transcriber,
-            init_client(),
-        )
-        self.action_controller.register_action(transcribe_action)
-        self.action_controller.register_action(update_settings_action)
+        for action_config in actions_config["actions"]:
+            action = self.action_factory.get_action(action_config, self.recorder, self.transcriber)
+            if action:
+                self.action_controller.register_action(action)
+            else:
+                logger.error(f"Failed to create action for {action_config['name']}")
 
     def register_actions(self):
-        """
-        Load and register actions from a YAML configuration file.
-        """
-        self.register_base_actions()
         self.load_actions_from_yaml("actions_config.yml")
+        self.action_factory.pretty_print_actions_to_console()
 
     def listen_and_respond(self):
         self.register_actions()

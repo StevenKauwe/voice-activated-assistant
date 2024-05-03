@@ -1,5 +1,18 @@
 actions:
+  - name: "transcribe_text"
+    class: "TranscribeAndSaveTextAction"
+    start_phrase: "start transcribing"
+    end_phrase: "stop transcribing"
+    prompt: "Transcribe spoken words into text."
+      
+  - name: "update_settings"
+    class: "UpdateSettingsAction"
+    start_phrase: "update settings"
+    end_phrase: "finish update"
+    prompt: "Update system settings based on user commands."
+    
   - name: "general gpt"
+    class: "TalkToGPTAction"
     start_phrase: "hi computer"
     end_phrase: "see ya"
     prompt: |
@@ -21,6 +34,7 @@ actions:
       Assume the user wants advanced pythonic solutions.
 
   - name: "write ticket"
+    class: "TalkToGPTAction"
     start_phrase: "new ticket"
     end_phrase: "see ya"
     prompt: |
@@ -55,6 +69,7 @@ actions:
       ```
 
   - name: "write pull request description"
+    class: "TalkToGPTAction"
     start_phrase: "new pull request"
     end_phrase: "see ya"
     prompt: |
