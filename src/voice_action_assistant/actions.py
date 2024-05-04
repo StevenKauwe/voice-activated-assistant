@@ -147,10 +147,7 @@ class TranscribeAction(Action):
             return TranscribeActionResponse(self.start_action, True)
         elif stop_action_response.success and self.in_progress:
             self.in_progress = False
-            transcribe_stop_action_response = TranscribeActionResponse(
-                action=stop_action_response.action, success=stop_action_response.success
-            )
-            return self._action_logic(transcribe_stop_action_response)
+            return self._action_logic(stop_action_response)
         logger.debug("TranscribeAction did not perform any action.")
         return TranscribeActionResponse(self, False)
 
@@ -185,7 +182,9 @@ class TranscribeAndSaveTextAction(TranscribeAction):
     def _action_logic(
         self, transcription_response: TranscribeActionResponse
     ) -> TranscribeActionResponse:
-        logger.debug(f"Transcription response for Paste action: {transcription_response}")
+        logger.debug(
+            f"Transcription response for Paste action: {transcription_response.transcript}"
+        )
         if transcription_response.success:
             transcript = transcription_response.transcript
             cleaned_transcript = self._clean_and_save_transcript(transcript)
