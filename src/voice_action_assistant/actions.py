@@ -1,13 +1,12 @@
-from abc import ABC, abstractmethod
 import json
 import os
 import re
+from abc import ABC, abstractmethod
 from textwrap import dedent
-from typing import Optional
-from pydantic import BaseModel
 
 import pyperclip
 from loguru import logger
+from pydantic import BaseModel
 
 from voice_action_assistant.config import config
 from voice_action_assistant.llm import TextGenerator

@@ -8,7 +8,7 @@ from typing import Dict
 from loguru import logger
 
 # Assuming the existence of Action classes in actions.py
-from voice_action_assistant.actions import Action, ActionFactory
+from voice_action_assistant.actions import Action, ActionFactory, ActionTrascript
 from voice_action_assistant.config import config
 from voice_action_assistant.llm import TextGenerator
 from voice_action_assistant.recorder import AudioDetector, AudioRecorder
@@ -50,7 +50,7 @@ class ActionController:
         for action_name, action in self.actions.items():
             logger.debug(f"Checking phrase: {action.phrase} in transcription: {transcription}")
             if transcript_contains_phrase(transcription, action.phrase):
-                response = action.perform(transcription)
+                response = action.perform(ActionTrascript(transcript=transcription))
                 if response.success:
                     return action_name
         return None
