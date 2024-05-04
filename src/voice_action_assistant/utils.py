@@ -8,6 +8,7 @@ from enum import Enum
 from pathlib import Path
 from textwrap import dedent
 from threading import Lock
+from typing import Callable
 
 import numpy as np
 import pyautogui
@@ -23,13 +24,13 @@ from pygame import mixer
 from voice_action_assistant.config import config
 
 
-def load_config_yml(file_path: str):
+def load_config_yml(file_path: str) -> dict:
     with open(file_path, "r") as file:
         config = yaml.safe_load(file)
     return config
 
 
-def create_regex_pattern(phrase):
+def create_regex_pattern(phrase: str) -> str:
     # Split the phrase into words
     words = phrase.split()
 
@@ -43,7 +44,7 @@ def create_regex_pattern(phrase):
     return regex_pattern
 
 
-def transcript_contains_phrase(transcript, action_phrase):
+def transcript_contains_phrase(transcript, action_phrase) -> bool:
     # Generate the regex pattern from the stop phrase
     pattern = create_regex_pattern(action_phrase)
 
@@ -53,7 +54,7 @@ def transcript_contains_phrase(transcript, action_phrase):
     return match is not None
 
 
-def remove_trailing_phrase(transcript, phrase):
+def remove_trailing_phrase(transcript, phrase) -> str:
     # Generate the regex pattern from the stop phrase
     pattern = create_regex_pattern(phrase)
 
@@ -63,7 +64,7 @@ def remove_trailing_phrase(transcript, phrase):
     return cleaned_transcript
 
 
-def load_numpy_from_audio_file(audio_file: str, target_rate=16000):
+def load_numpy_from_audio_file(audio_file: str, target_rate=16000) -> np.ndarray:
     """
     Converts an audio file to a NumPy array and resamples to the target rate.
 
@@ -94,7 +95,7 @@ def load_numpy_from_audio_file(audio_file: str, target_rate=16000):
     return samples
 
 
-def play_sound(sound_file):
+def play_sound(sound_file) -> None:
     pygame.mixer.init()
     pygame.mixer.music.load(sound_file)
     pygame.mixer.music.play()
@@ -102,7 +103,7 @@ def play_sound(sound_file):
         pygame.time.Clock().tick(10)
 
 
-def timer_decorator(func):
+def timer_decorator(func) -> Callable:
     def wrapper(*args, **kwargs):
         start_time = time.time()
         result = func(*args, **kwargs)
@@ -114,15 +115,15 @@ def timer_decorator(func):
     return wrapper
 
 
-def speed_up_audio(filename: str, speed=2):
+def speed_up_audio(filename: str, speed: float = 2.0) -> None:
     if speed == 1:
         return
-    sound: AudioSegment = AudioSegment.from_file(filename)
+    sound = AudioSegment.from_file(filename)
     sound_with_altered_speed = sound.speedup(playback_speed=speed)
     sound_with_altered_speed.export(filename, format="mp3")
 
 
-def example_waveform():
+def example_waveform() -> torch.Tensor:
     # Parameters for the waveform
     sample_rate = 16000  # Sampling rate in Hz
     duration = 1.0  # Duration in seconds
@@ -136,20 +137,20 @@ def example_waveform():
     return waveform
 
 
-def load_text_file(file_path):
+def load_text_file(file_path) -> str:
     with open(file_path, "r") as file:
         text = file.read()
     return text
 
 
-def init_client():
+def init_client() -> OpenAI:
     openai_client = OpenAI(
         api_key=os.getenv("OPENAI_API_KEY"),
     )
     return openai_client
 
 
-def llm_post_process_transcript(transcript: str):
+def llm_post_process_transcript(transcript: str) -> str:
     system_prompt = dedent(
         f"""\
         context from user:
@@ -185,7 +186,7 @@ def llm_post_process_transcript(transcript: str):
     return response_text
 
 
-def paste_at_cursor():
+def paste_at_cursor() -> None:
     """
     Paste the text at the cursor position.
     This requires system permissions to work.
@@ -201,13 +202,13 @@ def paste_at_cursor():
         pyautogui.keyUp("command")
 
 
-def copy_to_clipboard(text: str):
+def copy_to_clipboard(text: str) -> None:
     if config.COPY_TO_CLIPBOARD:
         pyperclip.copy(text)
         logger.info("Text copied to clipboard.")
 
 
-def tts_transcript(transcript: str):
+def tts_transcript(transcript: str) -> None:
     try:
         openai_client = init_client()
         speech_file_path = Path(__file__).parent / "response.mp3"
@@ -233,7 +234,7 @@ def tts_transcript(transcript: str):
     logger.info("Response spoken.")
 
 
-def stt_audio_file(file_name: str):
+def stt_audio_file(file_name: str) -> str:
     openai_client = init_client()
     with open(file_name, "rb") as f:
         transcript = openai_client.audio.transcriptions.create(model="whisper-1", file=f)
@@ -256,7 +257,7 @@ def color_text(text: str, color: ColorEnum) -> str:
 
 
 class StreamColorPrinter:
-    def __init__(self, start_trigger: str, end_trigger: str, buffer_size: int = 100):
+    def __init__(self, start_trigger: str, end_trigger: str, buffer_size: int = 100) -> None:
         self.start_trigger = start_trigger
         self.end_trigger = end_trigger
         self.buffer_size = buffer_size
@@ -267,7 +268,7 @@ class StreamColorPrinter:
         self.code_block_color = ColorEnum.CYAN.value
         self.current_color = self.base_color
 
-    def _update_color(self, word: str):
+    def _update_color(self, word: str) -> None:
         # Update the buffer and check for triggers
         self.buffer.append(word)
         buffer_content = "".join(self.buffer)
@@ -280,7 +281,7 @@ class StreamColorPrinter:
             return
         self.buffer.clear()
 
-    def print(self, word: str):
+    def print(self, word: str) -> None:
         with self.print_lock:
             self._update_color(word)
             colored_word = color_text(word, ColorEnum(self.current_color))
