@@ -39,6 +39,10 @@ build-backend = "hatchling.build"
 managed = true
 dev-dependencies = ["ruff"]
 
+[[tool.rye.sources]]
+name = "pytorch"
+url = "https://download.pytorch.org/whl/cu121"
+
 [tool.hatch.metadata]
 allow-direct-references = true
 
