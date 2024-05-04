@@ -1,35 +1,42 @@
+from abc import ABC, abstractmethod
 import json
 import os
 import re
 from textwrap import dedent
 from typing import Optional
+from pydantic import BaseModel
 
 import pyperclip
 from loguru import logger
 
 from voice_action_assistant.config import config
+from voice_action_assistant.llm import TextGenerator
 from voice_action_assistant.recorder import AudioRecorder
 from voice_action_assistant.transcriber import Transcriber
 from voice_action_assistant.utils import (
     ColorEnum,
     color_text,
     copy_to_clipboard,
-    init_client,
     load_config_yml,
     paste_at_cursor,
     play_sound,
     python_printer,
     transcript_contains_phrase,
-    tts_transcript,
 )
 
 
-class Action:
+class ActionTrascript(BaseModel):
+    transcript: str
+    in_progress: bool | None = None
+
+
+class Action(ABC):
     def __init__(self, phrase: str):
         self.phrase = phrase.lower()
         self.audio_files_dir = config.AUDIO_FILES_DIR
 
-    def perform(self, transcript: str = None) -> "ActionResponse":
+    @abstractmethod
+    def perform(self, action_transcript: ActionTrascript) -> "ActionResponse":
         raise NotImplementedError
 
     @property
@@ -44,8 +51,10 @@ class ActionResponse:
 
 
 class TranscribeActionResponse(ActionResponse):
-    def __init__(self, action: Action, success: bool, transcript: Optional[str] = None):
+    def __init__(self, action: Action, success: bool, transcript: str | None = None):
         super().__init__(action, success)
+        if not transcript:
+            transcript = ""
         self.transcript = transcript
 
 
@@ -61,9 +70,9 @@ class StartTranscriptionAction(Action):
         self.audio_recorder = audio_recorder
         self.transcriber = transcriber
 
-    def perform(self, action_phrase_transcript):
+    def perform(self, action_transcript: ActionTrascript) -> ActionResponse:
         if (
-            transcript_contains_phrase(action_phrase_transcript, self.phrase)
+            transcript_contains_phrase(action_transcript, self.phrase)
             and not self.audio_recorder.is_recording
         ):
             self.audio_recorder.start_recording()
@@ -85,19 +94,19 @@ class StopTranscriptionAction(Action):
         self.audio_recorder = audio_recorder
         self.transcriber = transcriber
 
-    def perform(self, action_phrase_transcript, in_progress: bool = False):
-        if not in_progress:
+    def perform(self, action_transcript: ActionTrascript) -> ActionResponse:
+        if not action_transcript.in_progress:
             return TranscribeActionResponse(self, False)
         if (
-            transcript_contains_phrase(action_phrase_transcript, self.phrase)
+            transcript_contains_phrase(action_transcript, self.phrase)
             and self.audio_recorder.is_recording
         ):
             audio_data = self.audio_recorder.stop_recording()
             logger.info("StopTranscriptionAction - Recording stopped.")
             play_sound(os.path.join(self.audio_files_dir, "sound_end.wav"))
-            action_phrase_transcript = self.transcriber.transcribe_audio(audio_data)
-            logger.info(f"Raw Transcript: {action_phrase_transcript}")
-            return TranscribeActionResponse(self, True, action_phrase_transcript)
+            transcript = self.transcriber.transcribe_audio(audio_data)
+            logger.info(f"Raw Transcript: {transcript}")
+            return TranscribeActionResponse(self, True, transcript)
         return TranscribeActionResponse(self, False)
 
 
@@ -108,6 +117,7 @@ class TranscribeAction(Action):
         stop_action_phrase: str,
         audio_recorder: AudioRecorder,
         transcriber: Transcriber,
+        text_generator: TextGenerator,
         action_name: str | None = None,
         system_message: str | None = None,
     ):
@@ -118,23 +128,32 @@ class TranscribeAction(Action):
         )
         self.stop_action = StopTranscriptionAction(stop_action_phrase, audio_recorder, transcriber)
         self.transcriber = transcriber
+        self.text_generator = text_generator
         self.audio_recorder = audio_recorder
         self.in_progress = False
         self.action_name = action_name
         self.system_message = system_message
 
-    def _action_logic(self, transcription_response) -> TranscribeActionResponse:
+    @abstractmethod
+    def _action_logic(
+        self, transcription_response: TranscribeActionResponse
+    ) -> TranscribeActionResponse:
         raise NotImplementedError
 
-    def perform(self, action_phrase_transcript):
-        start_action_response = self.start_action.perform(action_phrase_transcript)
-        stop_action_response = self.stop_action.perform(action_phrase_transcript, self.in_progress)
+    def perform(self, action_transcript: ActionTrascript):
+        start_action_response = self.start_action.perform(action_transcript)
+        stop_action_response = self.stop_action.perform(
+            ActionTrascript(transcript=action_transcript.transcript, in_progress=self.in_progress)
+        )
         if start_action_response.success:
             self.in_progress = True
             return TranscribeActionResponse(self.start_action, True)
         elif stop_action_response.success and self.in_progress:
             self.in_progress = False
-            return self._action_logic(stop_action_response)
+            transcribe_stop_action_response = TranscribeActionResponse(
+                action=stop_action_response.action, success=stop_action_response.success
+            )
+            return self._action_logic(transcribe_stop_action_response)
         logger.debug("TranscribeAction did not perform any action.")
         return TranscribeActionResponse(self, False)
 
@@ -152,6 +171,7 @@ class TranscribeAndSaveTextAction(TranscribeAction):
         stop_action_phrase: str,
         audio_recorder: AudioRecorder,
         transcriber: Transcriber,
+        text_generator: TextGenerator,
         action_name: str | None = None,
         system_message: str | None = None,
     ):
@@ -160,11 +180,14 @@ class TranscribeAndSaveTextAction(TranscribeAction):
             stop_action_phrase,
             audio_recorder,
             transcriber,
+            text_generator,
             action_name,
             system_message,
         )
 
-    def _action_logic(self, transcription_response: TranscribeActionResponse) -> ActionResponse:
+    def _action_logic(
+        self, transcription_response: TranscribeActionResponse
+    ) -> TranscribeActionResponse:
         logger.debug(f"Transcription response for Paste action: {transcription_response}")
         if transcription_response.success:
             transcript = transcription_response.transcript
@@ -173,9 +196,9 @@ class TranscribeAndSaveTextAction(TranscribeAction):
             paste_at_cursor()
             logger.info(f"Processed Transcript: {transcript}")
             play_sound(os.path.join(config.AUDIO_FILES_DIR, "action-complete-audio.wav"))
-            return ActionResponse(success=True, action=self)
+            return TranscribeActionResponse(success=True, action=self)
         else:
-            return ActionResponse(success=False, action=self)
+            return TranscribeActionResponse(success=False, action=self)
 
     @property
     def name(self):
@@ -189,11 +212,17 @@ class TalkToLanguageModelAction(TranscribeAction):
         stop_action_phrase: str,
         audio_recorder: AudioRecorder,
         transcriber: Transcriber,
+        text_generator: TextGenerator,
         action_name: str | None = None,
         system_message: str | None = None,
     ):
         super().__init__(
-            start_action_phrase, stop_action_phrase, audio_recorder, transcriber, action_name
+            start_action_phrase,
+            stop_action_phrase,
+            audio_recorder,
+            transcriber,
+            text_generator,
+            action_name,
         )
         default_system_message = dedent(
             """\
@@ -203,7 +232,9 @@ class TalkToLanguageModelAction(TranscribeAction):
         )
         self.system_message = system_message or default_system_message
 
-    def _action_logic(self, transcription_response: TranscribeActionResponse) -> ActionResponse:
+    def _action_logic(
+        self, transcription_response: TranscribeActionResponse
+    ) -> TranscribeActionResponse:
         # Implement specific logic for post-processing after transcription
         if transcription_response.success:
             transcript = transcription_response.transcript
@@ -219,16 +250,13 @@ class TalkToLanguageModelAction(TranscribeAction):
                 """
             )
 
-            openai_client = init_client()
-            completion = openai_client.chat.completions.create(
-                model=config.MODEL_ID,
+            completion = self.text_generator.generate_text(
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": f"{cleaned_transcript}"},
                 ],
                 max_tokens=2048,
                 temperature=0.1,
-                stream=True,
             )
 
             llm_response_content = ""
@@ -261,15 +289,11 @@ class TalkToLanguageModelAction(TranscribeAction):
                         copy_to_clipboard(formatted_code_blocks)
             except Exception as e:
                 logger.error(e)
-                none_python_text = llm_response_content
-
-            if config.USE_TTS:
-                tts_transcript(none_python_text)
 
             play_sound(os.path.join(config.AUDIO_FILES_DIR, "action-complete-audio.wav"))
-            return ActionResponse(success=True, action=self)
+            return TranscribeActionResponse(success=True, action=self)
         else:
-            return ActionResponse(success=False, action=self)
+            return TranscribeActionResponse(success=False, action=self)
 
     @property
     def name(self):
@@ -283,6 +307,7 @@ class AssistantSettingsAction(TranscribeAction):
         stop_action_phrase: str,
         audio_recorder: AudioRecorder,
         transcriber: Transcriber,
+        text_generator: TextGenerator,
         action_name: str | None = None,
         system_message: str | None = None,
     ):
@@ -291,12 +316,14 @@ class AssistantSettingsAction(TranscribeAction):
             stop_action_phrase,
             audio_recorder,
             transcriber,
+            text_generator,
             action_name,
             system_message,
         )
 
-    def _action_logic(self, transcription_response: TranscribeActionResponse) -> ActionResponse:
-        openai_client = init_client()
+    def _action_logic(
+        self, transcription_response: TranscribeActionResponse
+    ) -> TranscribeActionResponse:
         cleaned_transcript = self._clean_and_save_transcript(transcription_response.transcript)
         try:
             config_attributes = load_config_yml("settings_config.yml")
@@ -315,8 +342,7 @@ class AssistantSettingsAction(TranscribeAction):
                 }}
                 ```
             """
-            response = openai_client.chat.completions.create(
-                model=config.MODEL_ID,
+            response = self.text_generator.generate_text(
                 messages=[
                     {"role": "system", "content": preprompt},
                     {
@@ -327,22 +353,28 @@ class AssistantSettingsAction(TranscribeAction):
                 max_tokens=1000,
                 temperature=0.1,
             )
-            response_text = response.choices[0].message.content
+            response_text = ""
+            for chunk in response:
+                str_delta = chunk.choices[0].delta.content
+                if str_delta:
+                    response_text += str_delta
+
             logger.info(f"Response: {response_text}")
             if "VIEW_SETTINGS" in response_text:
                 # Print current settings
                 current_settings = {attr: getattr(config, attr) for attr in config_attributes}
                 print("Current Settings:", json.dumps(current_settings, indent=4))
-                return ActionResponse(self, True)
+                return TranscribeActionResponse(self, True)
             elif "```json" in response_text:
                 response_text = response_text.split("```json")[1].split("```")[0]
                 response_json = json.loads(response_text)
                 for key, value in response_json.items():
                     config.update(key, value)
-                return ActionResponse(self, True)
+                return TranscribeActionResponse(self, True)
+            return TranscribeActionResponse(self, False)
         except Exception as e:
             logger.error(e)
-            return ActionResponse(self, False)
+            return TranscribeActionResponse(self, False)
 
     @property
     def name(self):

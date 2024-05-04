@@ -16,6 +16,7 @@ import pyperclip
 import torch
 import yaml
 from loguru import logger
+from openai import OpenAI
 from pydub import AudioSegment
 from pygame import mixer
 
@@ -197,11 +198,10 @@ def copy_to_clipboard(text: str) -> None:
         logger.info("Text copied to clipboard.")
 
 
-def tts_transcript(transcript: str) -> None:
+def tts_transcript(transcript: str, tts_client: OpenAI) -> None:
     try:
-        openai_client = init_client()
         speech_file_path = Path(__file__).parent / "response.mp3"
-        response = openai_client.audio.speech.create(
+        response = tts_client.audio.speech.create(
             model="tts-1",
             voice="alloy",
             input=transcript,
@@ -223,10 +223,9 @@ def tts_transcript(transcript: str) -> None:
     logger.info("Response spoken.")
 
 
-def stt_audio_file(file_name: str) -> str:
-    openai_client = init_client()
+def stt_audio_file(file_name: str, stt_client: OpenAI) -> str:
     with open(file_name, "rb") as f:
-        transcript = openai_client.audio.transcriptions.create(model="whisper-1", file=f)
+        transcript = stt_client.audio.transcriptions.create(model="whisper-1", file=f)
     transcript_text = transcript.text
     return transcript_text
 

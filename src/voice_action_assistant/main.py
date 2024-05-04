@@ -10,9 +10,9 @@ from loguru import logger
 # Assuming the existence of Action classes in actions.py
 from voice_action_assistant.actions import Action, ActionFactory
 from voice_action_assistant.config import config
+from voice_action_assistant.llm import TextGenerator
 from voice_action_assistant.recorder import AudioDetector, AudioRecorder
 from voice_action_assistant.transcriber import Transcriber
-from voice_action_assistant.llm import TextGenerator
 from voice_action_assistant.utils import load_config_yml, play_sound, transcript_contains_phrase
 
 # Start a new thread to play the startup audio

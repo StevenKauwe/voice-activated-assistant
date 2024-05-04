@@ -1,11 +1,12 @@
 import os
+import time
 from threading import Thread
 from typing import Iterable
 
 import torch
 from loguru import logger
-from openai import OpenAI, Stream
-from openai.types.chat.chat_completion_chunk import ChatCompletionChunk, Choice
+from openai import OpenAI
+from openai.types.chat.chat_completion_chunk import ChatCompletionChunk, Choice, ChoiceDelta
 from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
 
 from voice_action_assistant.config import config
@@ -25,10 +26,17 @@ class LocalCompletions:
             self.tokenizer.convert_tokens_to_ids("<|eot_id|>"),
         ]
 
-    def stream_as_chat_chunks(self, iterable: Iterable[str]) -> Stream[ChatCompletionChunk]:
+    def stream_as_chat_chunks(self, iterable: Iterable[str]) -> Iterable[ChatCompletionChunk]:
         for i, chunk in enumerate(iterable):
-            choice = Choice(delta=chunk, index=i)
-            yield ChatCompletionChunk(id="local", choices=[chunk], model=self.model_id, ]))
+            choice_delta = ChoiceDelta(content=chunk)
+            choice = Choice(delta=choice_delta, index=i)
+            yield ChatCompletionChunk(
+                id="local",
+                choices=[choice],
+                model=self.model_id,
+                created=int(time.time()),
+                object="chat.completion.chunk",
+            )
 
     def create(
         self,
@@ -37,7 +45,7 @@ class LocalCompletions:
         max_tokens: int,
         temperature: float,
         stream: bool,
-    ) -> Stream[ChatCompletionChunk]:
+    ) -> Iterable[ChatCompletionChunk]:
         if model != self.model_id:
             logger.debug(f"Model {model} does not match initialized model {self.model_id}.")
         if not stream:
@@ -100,10 +108,11 @@ class TextGenerator:
 
     def __init__(self):
         self.client = init_llm_client()
+        self.chat = self.client.chat
 
     def generate_text(
         self, messages, max_tokens: int, temperature: float
-    ) -> Stream[ChatCompletionChunk]:
+    ) -> Iterable[ChatCompletionChunk]:
         completions = self.client.chat.completions.create(
             model=config.MODEL_ID,
             messages=messages,
