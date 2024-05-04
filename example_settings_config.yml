@@ -10,9 +10,13 @@ COPY_TO_CLIPBOARD: true
 # If this is set to true, the system will only grab what's in triple backticks (```) and ignore everything else in the response.
 EXTRACT_CODE_BLOCKS: true
 
-# Whether to run the system locally.
+# Whether to run the OpenAI Whisper Model locally.
 # If this is set to true, the system will run on your local machine. If it's false, it might run on a remote server or in the cloud.
-LOCAL: true
+LOCAL_STT: true
+
+# Whether to run Llama3 (default) Model locally.
+# If this is set to true, the system will run on your local machine. If it's false, you'll need to use OpenAI cloud services.
+LOCAL_LLM: true
 
 # The maximum length of audio recordings, in seconds.
 # This setting is used when the system is recording audio input.
