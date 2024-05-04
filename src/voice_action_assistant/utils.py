@@ -1,5 +1,4 @@
 import math
-import os
 import re
 import sys
 import time
@@ -17,11 +16,11 @@ import pyperclip
 import torch
 import yaml
 from loguru import logger
-from openai import OpenAI
 from pydub import AudioSegment
 from pygame import mixer
 
 from voice_action_assistant.config import config
+from voice_action_assistant.llm import TextGenerator
 
 
 def load_config_yml(file_path: str) -> dict:
@@ -143,14 +142,7 @@ def load_text_file(file_path) -> str:
     return text
 
 
-def init_client() -> OpenAI:
-    openai_client = OpenAI(
-        api_key=os.getenv("OPENAI_API_KEY"),
-    )
-    return openai_client
-
-
-def llm_post_process_transcript(transcript: str) -> str:
+def llm_post_process_transcript(transcript: str, text_generator: TextGenerator) -> str:
     system_prompt = dedent(
         f"""\
         context from user:
@@ -158,18 +150,15 @@ def llm_post_process_transcript(transcript: str) -> str:
 
         {pyperclip.paste()}
         """
-    )  # config.TRANSCRIPTION_PREPROMPT
+    )
 
-    openai_client = init_client()
-    completion = openai_client.chat.completions.create(
-        model=config.MODEL_ID,
+    completion = text_generator.generate_text(
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": f"{transcript}"},
         ],
         max_tokens=1024,
         temperature=0.1,
-        stream=True,
     )
 
     response_text = ""
