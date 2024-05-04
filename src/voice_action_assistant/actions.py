@@ -91,7 +91,7 @@ class StopTranscriptionAction(Action):
         self.audio_recorder = audio_recorder
         self.transcriber = transcriber
 
-    def perform(self, action_transcript: ActionTrascript) -> ActionResponse:
+    def perform(self, action_transcript: ActionTrascript) -> TranscribeActionResponse:
         if not action_transcript.in_progress:
             return TranscribeActionResponse(self, False)
         if (
