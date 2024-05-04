@@ -85,14 +85,16 @@ def init_local_llm() -> LocalLanguageModelClient:
     Otherwise, attempt to use the specified model."""
     model_id = config.MODEL_ID
     if "gpt" in config.MODEL_ID.lower():
-        model_id = "meta-llama/Meta-Llama-3-8B-Instruct"
+        # This llama3 model doesn't require auth against huggingfage repo.
+        # model_id = "gradientai/Llama-3-8B-Instruct-Gradient-1048k"
+        model_id = "DevsDoCode/LLama-3-8b-Uncensored-4bit"
     return LocalLanguageModelClient(model_id)
 
 
 def init_llm_client() -> OpenAI | LocalLanguageModelClient:
     return (
         init_local_llm()
-        if config.LOCAL
+        if config.LOCAL_LLM
         else OpenAI(
             api_key=os.getenv("OPENAI_API_KEY"),
         )

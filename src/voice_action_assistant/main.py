@@ -27,7 +27,7 @@ threading.Thread(
 ).start()
 
 
-def logger_init(level="INFO"):
+def logger_init(level="DEBUG"):
     logger.remove()
     # Define a custom log level
     logger.level("LLM", no=35, color="<fg #a388f2>", icon="🤖")
@@ -70,7 +70,9 @@ class VoiceControlledRecorder:
         actions_config = load_config_yml(yaml_file)
 
         for action_config in actions_config["actions"]:
-            action = self.action_factory.get_action(action_config, self.recorder, self.transcriber)
+            action = self.action_factory.get_action(
+                action_config, self.recorder, self.transcriber, self.text_generator
+            )
             if action:
                 self.action_controller.register_action(action)
             else:

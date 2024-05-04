@@ -44,7 +44,7 @@ def create_regex_pattern(phrase: str) -> str:
     return regex_pattern
 
 
-def transcript_contains_phrase(transcript, action_phrase) -> bool:
+def transcript_contains_phrase(transcript: str, action_phrase: str) -> bool:
     # Generate the regex pattern from the stop phrase
     pattern = create_regex_pattern(action_phrase)
 
@@ -176,7 +176,7 @@ def llm_post_process_transcript(transcript: str, text_generator: TextGenerator) 
     return response_text
 
 
-def paste_at_cursor() -> None:
+def optional_paste_at_cursor() -> None:
     """
     Paste the text at the cursor position.
     This requires system permissions to work.
@@ -192,7 +192,7 @@ def paste_at_cursor() -> None:
         pyautogui.keyUp("command")
 
 
-def copy_to_clipboard(text: str) -> None:
+def optional_copy_to_clipboard(text: str) -> None:
     if config.COPY_TO_CLIPBOARD:
         pyperclip.copy(text)
         logger.info("Text copied to clipboard.")

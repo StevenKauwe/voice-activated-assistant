@@ -12,7 +12,8 @@ class Settings(BaseSettings):
     MODEL_ID: str = "gpt-4-turbo"
     COPY_TO_CLIPBOARD: bool = True
     EXTRACT_CODE_BLOCKS: bool = True
-    LOCAL: bool = True
+    LOCAL_STT: bool = True
+    LOCAL_LLM: bool = True
     MAX_AUDIO_LENGTH_SECONDS: int = 3600
     USE_TTS: bool = False
     AUDIO_SPEED: float = 1.25

@@ -107,7 +107,7 @@ class STT:
 
 class Transcriber:
     def __init__(self):
-        self.stt = STT(local=config.LOCAL)
+        self.stt = STT(local=config.LOCAL_STT)
 
     @timer_decorator
     def transcribe_audio(self, audio: np.ndarray, pre_audio_file: str = ""):

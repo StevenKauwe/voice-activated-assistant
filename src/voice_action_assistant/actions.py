@@ -15,9 +15,9 @@ from voice_action_assistant.transcriber import Transcriber
 from voice_action_assistant.utils import (
     ColorEnum,
     color_text,
-    copy_to_clipboard,
     load_config_yml,
-    paste_at_cursor,
+    optional_copy_to_clipboard,
+    optional_paste_at_cursor,
     play_sound,
     python_printer,
     transcript_contains_phrase,
@@ -52,8 +52,6 @@ class ActionResponse:
 class TranscribeActionResponse(ActionResponse):
     def __init__(self, action: Action, success: bool, transcript: str | None = None):
         super().__init__(action, success)
-        if not transcript:
-            transcript = ""
         self.transcript = transcript
 
 
@@ -71,7 +69,7 @@ class StartTranscriptionAction(Action):
 
     def perform(self, action_transcript: ActionTrascript) -> ActionResponse:
         if (
-            transcript_contains_phrase(action_transcript, self.phrase)
+            transcript_contains_phrase(action_transcript.transcript, self.phrase)
             and not self.audio_recorder.is_recording
         ):
             self.audio_recorder.start_recording()
@@ -97,7 +95,7 @@ class StopTranscriptionAction(Action):
         if not action_transcript.in_progress:
             return TranscribeActionResponse(self, False)
         if (
-            transcript_contains_phrase(action_transcript, self.phrase)
+            transcript_contains_phrase(action_transcript.transcript, self.phrase)
             and self.audio_recorder.is_recording
         ):
             audio_data = self.audio_recorder.stop_recording()
@@ -191,8 +189,8 @@ class TranscribeAndSaveTextAction(TranscribeAction):
         if transcription_response.success:
             transcript = transcription_response.transcript
             cleaned_transcript = self._clean_and_save_transcript(transcript)
-            copy_to_clipboard(cleaned_transcript)
-            paste_at_cursor()
+            optional_copy_to_clipboard(cleaned_transcript)
+            optional_paste_at_cursor()
             logger.info(f"Processed Transcript: {transcript}")
             play_sound(os.path.join(config.AUDIO_FILES_DIR, "action-complete-audio.wav"))
             return TranscribeActionResponse(success=True, action=self)
@@ -279,13 +277,13 @@ class TalkToLanguageModelAction(TranscribeAction):
 
             # Copy relevant to clipboard
             try:
-                copy_to_clipboard(llm_response_content)
+                optional_copy_to_clipboard(llm_response_content)
                 if config.EXTRACT_CODE_BLOCKS:
                     code_blocks = re.findall(r"```.*?\n(.*?)```", llm_response_content, re.DOTALL)
                     print("Code Blocks: ", code_blocks)
                     if code_blocks:
                         formatted_code_blocks = "\n---\n".join(code_blocks)
-                        copy_to_clipboard(formatted_code_blocks)
+                        optional_copy_to_clipboard(formatted_code_blocks)
             except Exception as e:
                 logger.error(e)
 
@@ -421,7 +419,7 @@ class ActionFactory:
     def pretty_print_actions_to_console(self):
         logger.info(self.generate_table())
 
-    def get_action(self, action_config, recorder, transcriber):
+    def get_action(self, action_config, recorder, transcriber, text_generator):
         action_class = self.action_classes.get(action_config["class"])
         if not action_class:
             logger.error(f"Action class {action_config['class']} not found")
@@ -432,6 +430,7 @@ class ActionFactory:
             stop_action_phrase=action_config["end_phrase"],
             audio_recorder=recorder,
             transcriber=transcriber,
+            text_generator=text_generator,
             action_name=action_config["name"],
             system_message=action_config["prompt"],
         )
