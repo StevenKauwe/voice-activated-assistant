@@ -1,25 +1,35 @@
 from typing import Tuple, Type
-
+from enum import Enum
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
     SettingsConfigDict,
     YamlConfigSettingsSource,
 )
+from pydantic import Field
 
+
+class LanguageModelType(str, Enum):
+    HUGGINGFACE = "huggingface"
+    OLLAMA = "ollama"
+    OPENAI = "openai"
+
+class LanguageModelConfig(BaseSettings):
+    model_id: str
+    model_type: LanguageModelType
+    server_url: str | None = Field("http://localhost:11434/v1") 
+
+class ClipboardConfig(BaseSettings):
+    copy_to_clipboard: bool
+    copy_from_code_blocks: bool
+    paste_at_cursor: bool
+    
 
 class Settings(BaseSettings):
-    MODEL_ID: str = "gpt-4-turbo"
-    COPY_TO_CLIPBOARD: bool = True
-    EXTRACT_CODE_BLOCKS: bool = True
-    LOCAL_STT: bool = True
-    LOCAL_LLM: bool = True
+    MODEL_ID_STT: str = "distil-whisper/distil-small.en"
+    LLM_CONFIG: LanguageModelConfig = LanguageModelConfig()
+    CLIPBOARD_CONFIG: ClipboardConfig = ClipboardConfig()
     MAX_AUDIO_LENGTH_SECONDS: int = 3600
-    USE_TTS: bool = False
-    AUDIO_SPEED: float = 1.25
-    AUDIO_FILES_DIR: str = "src/audio_files"
-    LLM_ACTION_PROMPTS_DIR: str = "src/llm-action-prompts"
-    PASTE_AT_CURSOR: bool = False
 
     model_config = SettingsConfigDict(yaml_file="settings_config.yml")
 

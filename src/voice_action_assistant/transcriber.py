@@ -35,7 +35,8 @@ def init_local_model() -> Pipeline:
 
     # model_id = "distil-whisper/distil-large-v2"
     # model_id = "distil-whisper/distil-medium.en"
-    model_id = "distil-whisper/distil-small.en"
+    # model_id = "distil-whisper/distil-small.en"
+    model_id = config.MODEL_ID_STT
 
     logger.info(f"Loading model: {model_id} on device: {device}")
 

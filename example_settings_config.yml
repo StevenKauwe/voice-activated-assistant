@@ -1,6 +1,18 @@
 # The ID of the model to use for generating responses.
 # In this case, it's set to "gpt-4-turbo", which is a powerful language model developed by OpenAI.
-MODEL_ID: "gpt-4-turbo"
+MODEL_ID_LLM: "gpt-4-turbo"
+
+# The ID of the model to use for speech-to-text conversion.
+# In this case, we're using OpenAI & HuggingFace trained "distil-whisper".
+MODEL_ID_STT: "distil-whisper/distil-small.en"
+
+# Whether to run Llama3 (default) Model locally.
+# If this is set to true, the system will run on your local machine. If it's false, you'll need to use OpenAI cloud services.
+LOCAL_LLM: true
+
+# Whether to run the OpenAI Whisper Model locally.
+# If this is set to true, the system will run on your local machine. If it's false, it might run on a remote server or in the cloud.
+LOCAL_STT: true
 
 # Whether to automatically copy the generated responses to the clipboard.
 # If this is set to true, you can easily paste the responses into other applications.
@@ -9,14 +21,6 @@ COPY_TO_CLIPBOARD: true
 # Whether to extract the first code block from the generated response to your clipboard.
 # If this is set to true, the system will only grab what's in triple backticks (```) and ignore everything else in the response.
 EXTRACT_CODE_BLOCKS: true
-
-# Whether to run the OpenAI Whisper Model locally.
-# If this is set to true, the system will run on your local machine. If it's false, it might run on a remote server or in the cloud.
-LOCAL_STT: true
-
-# Whether to run Llama3 (default) Model locally.
-# If this is set to true, the system will run on your local machine. If it's false, you'll need to use OpenAI cloud services.
-LOCAL_LLM: true
 
 # The maximum length of audio recordings, in seconds.
 # This setting is used when the system is recording audio input.

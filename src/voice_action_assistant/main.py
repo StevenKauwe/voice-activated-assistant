@@ -27,7 +27,7 @@ threading.Thread(
 ).start()
 
 
-def logger_init(level="DEBUG"):
+def logger_init(level="INFO"):
     logger.remove()
     # Define a custom log level
     logger.level("LLM", no=35, color="<fg #a388f2>", icon="🤖")

@@ -9,7 +9,7 @@ from openai import OpenAI
 from openai.types.chat.chat_completion_chunk import ChatCompletionChunk, Choice, ChoiceDelta
 from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
 
-from voice_action_assistant.config import config
+from voice_action_assistant.config import config, LanguageModelType
 
 
 class LocalCompletions:
@@ -80,26 +80,17 @@ class LocalLanguageModelClient:
         self.chat = LocalChat(model_id)
 
 
-def init_local_llm() -> LocalLanguageModelClient:
-    """If the model is set to an OpenAI model, default to the Meta-Llama 3.8B Instruct model.
-    Otherwise, attempt to use the specified model."""
-    model_id = config.MODEL_ID
-    if "gpt" in config.MODEL_ID.lower():
-        # This llama3 model doesn't require auth against huggingfage repo.
-        # model_id = "gradientai/Llama-3-8B-Instruct-Gradient-1048k"
-        model_id = "DevsDoCode/LLama-3-8b-Uncensored-4bit"
-    return LocalLanguageModelClient(model_id)
-
-
 def init_llm_client() -> OpenAI | LocalLanguageModelClient:
-    return (
-        init_local_llm()
-        if config.LOCAL_LLM
-        else OpenAI(
-            api_key=os.getenv("OPENAI_API_KEY"),
-        )
-    )
-
+    model_type = config.LLM_CONFIG.model_type
+    match model_type:
+        case LanguageModelType.HUGGINGFACE():
+            return LocalLanguageModelClient(config.LLM_CONFIG.model_id)
+        case LanguageModelType.OPENAI():
+            return OpenAI(
+                api_key=os.getenv("OPENAI_API_KEY"),
+            )
+        case LanguageModelType.OLLAMA():
+            return OpenAI(api_key="ollama", base_url=config.LLM_CONFIG.server_url)
 
 class TextGenerator:
     """
@@ -116,7 +107,7 @@ class TextGenerator:
         self, messages, max_tokens: int, temperature: float
     ) -> Iterable[ChatCompletionChunk]:
         completions = self.client.chat.completions.create(
-            model=config.MODEL_ID,
+            model=config.MODEL_ID_LLM,
             messages=messages,
             max_tokens=max_tokens,
             temperature=temperature,
