@@ -186,14 +186,14 @@ def optional_paste_at_cursor() -> None:
     Alternative would be "write at cursor" which would be more reliable.
     This would still require system permissions.
     """
-    if config.PASTE_AT_CURSOR:
+    if config.clipboard_config.paste_at_cursor:
         pyautogui.keyDown("command")
         pyautogui.press("v")
         pyautogui.keyUp("command")
 
 
 def optional_copy_to_clipboard(text: str) -> None:
-    if config.COPY_TO_CLIPBOARD:
+    if config.clipboard_config.copy_to_clipboard:
         pyperclip.copy(text)
         logger.info("Text copied to clipboard.")
 
@@ -208,7 +208,7 @@ def tts_transcript(transcript: str, tts_client: OpenAI) -> None:
         )
 
         response.stream_to_file(speech_file_path)
-        speed_up_audio("response.mp3", speed=config.AUDIO_SPEED)
+        speed_up_audio("response.mp3", speed=1.4)
         mixer.music.load("response.mp3")
         mixer.music.play()
         import time

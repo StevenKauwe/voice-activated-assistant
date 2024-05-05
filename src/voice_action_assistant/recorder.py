@@ -15,7 +15,7 @@ from voice_action_assistant.utils import timer_decorator
 
 
 class AudioRecorder:
-    def __init__(self, name="AudioRecorder", max_seconds=config.MAX_AUDIO_LENGTH_SECONDS):
+    def __init__(self, name="AudioRecorder", max_seconds=config.max_audio_length_seconds):
         self.name = name
         self.max_seconds = max_seconds
         self.is_recording = False

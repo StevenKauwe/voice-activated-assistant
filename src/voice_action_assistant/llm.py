@@ -81,16 +81,16 @@ class LocalLanguageModelClient:
 
 
 def init_llm_client() -> OpenAI | LocalLanguageModelClient:
-    model_type = config.LLM_CONFIG.model_type
+    model_type = config.llm_config.llm_type
     match model_type:
         case LanguageModelType.HUGGINGFACE:
-            return LocalLanguageModelClient(config.LLM_CONFIG.model_id)
+            return LocalLanguageModelClient(config.llm_config.llm_id)
         case LanguageModelType.OPENAI:
             return OpenAI(
                 api_key=os.getenv("OPENAI_API_KEY"),
             )
         case LanguageModelType.OLLAMA:
-            return OpenAI(api_key="ollama", base_url=config.LLM_CONFIG.server_url)
+            return OpenAI(api_key="ollama", base_url=config.llm_config.server_url)
         case _:
             raise ValueError(f"Unsupported model type: {model_type}")
 
@@ -103,7 +103,7 @@ class TextGenerator:
         self, messages, max_tokens: int, temperature: float
     ) -> Iterable[ChatCompletionChunk]:
         completions = self.client.chat.completions.create(
-            model=config.LLM_CONFIG.model_id,
+            model=config.llm_config.llm_id,
             messages=messages,
             max_tokens=max_tokens,
             temperature=temperature,

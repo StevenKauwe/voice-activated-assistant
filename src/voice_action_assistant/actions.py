@@ -32,7 +32,7 @@ class ActionTrascript(BaseModel):
 class Action(ABC):
     def __init__(self, phrase: str):
         self.phrase = phrase.lower()
-        self.audio_files_dir = config.AUDIO_FILES_DIR
+        self.audio_files_dir = config.audio_dir
 
     @abstractmethod
     def perform(self, action_transcript: ActionTrascript) -> "ActionResponse":
@@ -191,7 +191,7 @@ class TranscribeAndSaveTextAction(TranscribeAction):
             optional_copy_to_clipboard(cleaned_transcript)
             optional_paste_at_cursor()
             logger.info(f"Processed Transcript: {transcript}")
-            play_sound(os.path.join(config.AUDIO_FILES_DIR, "action-complete-audio.wav"))
+            play_sound(os.path.join(config.audio_dir, "action-complete-audio.wav"))
             return TranscribeActionResponse(success=True, action=self)
         else:
             return TranscribeActionResponse(success=False, action=self)
@@ -277,7 +277,7 @@ class TalkToLanguageModelAction(TranscribeAction):
             # Copy relevant to clipboard
             try:
                 optional_copy_to_clipboard(llm_response_content)
-                if config.EXTRACT_CODE_BLOCKS:
+                if config.clipboard_config.copy_from_code_blocks:
                     code_blocks = re.findall(r"```.*?\n(.*?)```", llm_response_content, re.DOTALL)
                     print("Code Blocks: ", code_blocks)
                     if code_blocks:
@@ -286,7 +286,7 @@ class TalkToLanguageModelAction(TranscribeAction):
             except Exception as e:
                 logger.error(e)
 
-            play_sound(os.path.join(config.AUDIO_FILES_DIR, "action-complete-audio.wav"))
+            play_sound(os.path.join(config.audio_dir, "action-complete-audio.wav"))
             return TranscribeActionResponse(success=True, action=self)
         else:
             return TranscribeActionResponse(success=False, action=self)

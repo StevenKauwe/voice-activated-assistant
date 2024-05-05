@@ -16,33 +16,33 @@ class LanguageModelType(str, Enum):
     OPENAI = "openai"
 
 
-# nvim find and replace model_id with llm_id but case sensitive: %s/model_id/llm_id/g
+# nvim find and replace llm_id with llm_id but case sensitive: %s/llm_id/llm_id/g
 class LanguageModelConfig(BaseSettings):
-    model_id: str
-    model_type: LanguageModelType
+    llm_id: str
+    llm_type: LanguageModelType
     server_url: str | None = Field("http://localhost:11434/v1")
 
     @classmethod
     def get_default_huggingface_config(cls):
         return cls(
-            model_id="",
-            model_type=LanguageModelType.HUGGINGFACE,
+            llm_id="",
+            llm_type=LanguageModelType.HUGGINGFACE,
             server_url=None,
         )
 
     @classmethod
     def get_default_ollama_config(cls):
         return cls(
-            model_id="llama3",
-            model_type=LanguageModelType.OLLAMA,
+            llm_id="llama3",
+            llm_type=LanguageModelType.OLLAMA,
             server_url="http://localhost:11434/v1",
         )
 
     @classmethod
     def get_default_openai_config(cls):
         return cls(
-            model_id="gpt-4-turbo",
-            model_type=LanguageModelType.OPENAI,
+            llm_id="gpt-4-turbo",
+            llm_type=LanguageModelType.OPENAI,
             server_url=None,
         )
 
@@ -62,12 +62,12 @@ class ClipboardConfig(BaseSettings):
 
 
 class Settings(BaseSettings):
-    CLIPBOARD_CONFIG: ClipboardConfig = ClipboardConfig.get_default()
-    LLM_CONFIG: LanguageModelConfig = LanguageModelConfig.get_default_huggingface_config()
-    MAX_AUDIO_LENGTH_SECONDS: int = 3600
-    MODEL_ID_STT: str = "distil-whisper/distil-small.en"
+    clipboard_config: ClipboardConfig = ClipboardConfig.get_default()
+    llm_config: LanguageModelConfig = LanguageModelConfig.get_default_huggingface_config()
+    max_audio_length_seconds: int = 3600
+    whisper_id: str = "distil-whisper/distil-small.en"
 
-    AUDIO_FILES_DIR: str = "src/audio_files"
+    audio_dir: str = "src/audio_files"
     model_config = SettingsConfigDict(yaml_file="settings_config.yml")
 
     @classmethod

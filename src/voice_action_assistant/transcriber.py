@@ -36,7 +36,7 @@ def init_local_model() -> Pipeline:
     # model_id = "distil-whisper/distil-large-v2"
     # model_id = "distil-whisper/distil-medium.en"
     # model_id = "distil-whisper/distil-small.en"
-    model_id = config.MODEL_ID_STT
+    model_id = config.whisper_id
 
     logger.info(f"Loading model: {model_id} on device: {device}")
 
@@ -108,7 +108,7 @@ class STT:
 
 class Transcriber:
     def __init__(self):
-        self.stt = STT(local=config.LOCAL_STT)
+        self.stt = STT()
 
     @timer_decorator
     def transcribe_audio(self, audio: np.ndarray, pre_audio_file: str = ""):

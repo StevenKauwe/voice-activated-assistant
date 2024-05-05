@@ -20,7 +20,7 @@ threading.Thread(
     target=play_sound,
     args=(
         os.path.join(
-            config.AUDIO_FILES_DIR,
+            config.audio_dir,
             "startup-audio.wav",
         ),
     ),
@@ -106,7 +106,7 @@ def main():
 
 
 def exit_program():
-    play_sound(os.path.join(config.AUDIO_FILES_DIR, "shutdown-audio.wav"))
+    play_sound(os.path.join(config.audio_dir, "shutdown-audio.wav"))
     sys.exit()
 
 
