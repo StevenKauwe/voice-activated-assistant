@@ -1,47 +1,27 @@
-# The ID of the model to use for generating responses.
-# In this case, it's set to "gpt-4-turbo", which is a powerful language model developed by OpenAI.
-MODEL_ID_LLM: "gpt-4-turbo"
+# Configuration for clipboard operations
+clipboard_config:
+  # Whether to copy the generated responses to your clipboard.
+  copy_to_clipboard: true
+  # Whether to extract the first code block from the generated response to your clipboard.
+  # If this is set to true, the system will only grab what's in triple backticks (```) and ignore everything else in the response.
+  copy_from_code_blocks: true
+  # Whether to paste the generated responses at the cursor position.
+  # If this is set to true, the responses will be inserted at the current cursor position in the active application.
+  paste_at_cursor: true
 
-# The ID of the model to use for speech-to-text conversion.
-# In this case, we're using OpenAI & HuggingFace trained "distil-whisper".
-MODEL_ID_STT: "distil-whisper/distil-small.en"
-
-# Whether to run Llama3 (default) Model locally.
-# If this is set to true, the system will run on your local machine. If it's false, you'll need to use OpenAI cloud services.
-LOCAL_LLM: true
-
-# Whether to run the OpenAI Whisper Model locally.
-# If this is set to true, the system will run on your local machine. If it's false, it might run on a remote server or in the cloud.
-LOCAL_STT: true
-
-# Whether to automatically copy the generated responses to the clipboard.
-# If this is set to true, you can easily paste the responses into other applications.
-COPY_TO_CLIPBOARD: true
-
-# Whether to extract the first code block from the generated response to your clipboard.
-# If this is set to true, the system will only grab what's in triple backticks (```) and ignore everything else in the response.
-EXTRACT_CODE_BLOCKS: true
+# Configuration for the language model
+llm_config:
+  # The ID of the language model to use for generating responses.
+  llm_id: "llama3"
+  # The type of the language model. This can be "ollama", "openai", or "huggingface".
+  llm_type: "ollama"
+  # The URL of the server where the language model is hosted for "ollama" models.
+  server_url: "http://localhost:11434/v1"
 
 # The maximum length of audio recordings, in seconds.
 # This setting is used when the system is recording audio input.
-MAX_AUDIO_LENGTH_SECONDS: 3600
+max_audio_length_seconds: 3600
 
-# Whether to use text-to-speech (TTS) to read out the generated responses.
-# If this is set to true, the system will use a TTS engine to convert the responses to speech.
-USE_TTS: false
-
-# The speed at which to play back the audio.
-# This is a multiplier, so 1.0 is normal speed, 2.0 is twice as fast, 0.5 is half as fast, etc.
-AUDIO_SPEED: 1.25
-
-# The directory where audio files are stored.
-# This setting is used when the system needs to save or load audio files.
-AUDIO_FILES_DIR: "src/audio_files"
-
-# The directory where prompts for the language model are stored.
-# These prompts are used to guide the language model's responses.
-LLM_ACTION_PROMPTS_DIR: "src/llm-action-prompts"
-
-# Whether to paste the generated responses at the cursor position.
-# If this is set to true, the responses will be inserted at the current cursor position in the active application.
-PASTE_AT_CURSOR: false
+# The ID of the model to use for speech-to-text conversion.
+# In this case, we're using OpenAI & HuggingFace trained "distil-whisper".
+whisper_id: "distil-whisper/distil-small.en"

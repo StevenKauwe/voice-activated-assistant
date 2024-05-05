@@ -14,8 +14,18 @@ This voice-activated assistant is a Python application designed to listen for sp
 ## Requirements
 
 - Rye package manager for Python projects
-    - Python 3.12 will be installed by Rye when setting up the project
+  - Python 3.12 will be installed by Rye when setting up the project
 - FFMPEG for audio processing
+- Access to text generation tool:
+  1. Ollama server, recommended for local LLM
+     - requires a server running on your local machine
+  2. HuggingFace's Transformers library
+     - works out of the box
+     - runs slower than Ollama
+  3. OpenAI API key, most powerful
+     - requires an internet connection
+     - incurs costs
+     - may have privacy implications
 - Microphone access on your device
 
 ## Installation
@@ -64,36 +74,8 @@ This voice-activated assistant is a Python application designed to listen for sp
     You should look at the exaple tools provided. You can delete these and make your own as needed.
 
 5. **Set up OpenAI credentials or use a local LLM**
-    <details open>
-      <summary>Use OpenAI for your LLM:</summary>
-      
-      Sign up for api access at [OpenAI](https://openai.com/index/openai-api) and follow instructions to create an api key. If for non-personal, make sure this repo adheres to all required policies, then get an API key from an Admin in your Organization (as applicable).
-
-      ### Set API key on macOS
-
-      1. Append your API key to your `.bashrc` or `.zshrc` file:
-          ```bash
-          echo 'export OPENAI_API_KEY="your_openai_api_key"' >> ~/.bashrc
-          ```
-      2. Source the file to update your environment variables:
-          ```bash
-          source ~/.bashrc
-          ```
-      
-      ### Set API key on Windows
-
-      1. Open a new Command Prompt as Administrator.
-
-      2. Set your API key as an environment variable using the `setx` command. Replace `"your_openai_api_key"` with your actual OpenAI API key:
-          ```cmd
-          setx OPENAI_API_KEY "your_openai_api_key"
-          ```
-      3. Close the Command Prompt. The changes will take effect when you open a new Command Prompt.
-
-    </details>
-
     <details>
-      <summary>Use a local LLM:</summary>
+      <summary>Use a local LLM (recommended):</summary>
 
       You can use a local language model (LLM) for text generation instead of the OpenAI API.
       This can be more cost-effective and provide better privacy.
@@ -102,7 +84,7 @@ This voice-activated assistant is a Python application designed to listen for sp
       2. Use Hugging Face's Transformers library to directly load your local LLM at voice-assistant start-up.
         
       ### Update the `settings_config.yml` file.
-      - Set `LOCAL_LLM` to `true` in the `settings_config.yml` file to use a local LLM for text generation.
+      - `settings_config.yml` file to use a local LLM for text generation.
       If you are using Ollama, set the `OLLAMA_SERVER_URL` environment variable to the URL of your Ollama server.
       Otherwise, set the `HUGGINGFACE_MODEL_ID` environment variable to the model ID of the LLM you want to use.
         
@@ -114,20 +96,57 @@ This voice-activated assistant is a Python application designed to listen for sp
         - This is probably fine locally but is not recommended for production environments.
 
       ```yaml
-      LOCAL_LLM: true
-      OLLAMA_SERVER_URL: "http://localhost:11434/v1"
+      llm_config:
+        llm_id: "llama3"
+        llm_type: "ollama"
+        server_url: "http://localhost:11434/v1"
       ```
 
       ### 2. Use HuggingFace's Transformers
       You can use Hugging Face's Transformers library to load a local LLM. You can find the model ID for the LLM you want to use on the Hugging Face Model Hub.
       You can also use the `transformers` library to load a local model from a file path.
       ```yaml
-      LOCAL_LLM: true
-      HUGGINGFACE_MODEL_ID: "unsloth/llama-3-8b-Instruct-bnb-4bit"
+      llm_config:
+        llm_id: "unsloth/llama-3-8b-Instruct-bnb-4bit"
+        llm_type: "huggingface"
+      ```
+    </details>
+
+    <details open>
+      <summary>Use OpenAI for your LLM:</summary>
+      
+      Sign up for api access at [OpenAI](https://openai.com/index/openai-api) and follow instructions to create an api key.
+      If for non-personal, make sure this repo adheres to all required policies, then get an API key from an Admin in your Organization (as applicable).
+
+      ### Update the `settings_config.yml` file.
+      - `settings_config.yml` file to use the OpenAI API for text generation.
+      Set the `OPENAI_API_KEY` environment variable to your OpenAI API key.
+      ```yaml
+      llm_config:
+        llm_id: "gpt-4-turbo"
+        llm_type: "openai"
+      ```
+
+      ### Set API key on macOS
+
+      1. Append your API key to your `.bashrc` or `.zshrc` file:
+      ```bash
+      echo 'export OPENAI_API_KEY="your_openai_api_key"' >> ~bashrc
+      ```
+      2. Source the file to update your environment variables:
+      ```bash
+      source ~/.bashrc
       ```
       
-      ### Recommended Models
-      - `llama3-8b-
+      ### Set API key on Windows
+
+      1. Open a new Command Prompt as Administrator.
+
+      2. Set your API key as an environment variable using the `setx` command. Replace `"your_openai_api_key"` with your actual OpenAI API key:
+      ```cmd
+      setx OPENAI_API_KEY "your_openai_api_key"
+      ```
+      3. Close the Command Prompt. The changes will take effect when you open a new Command Prompt.
 
     </details>
 
@@ -171,15 +190,6 @@ Updates to the action config will create new instances of your action classes an
 ## Settings
 
 To adjust the application's behavior, modify the `settings_config.yml` file. For example, you can change the model ID, enable or disable copying to the clipboard, adjust the maximum audio length, and more.
-
-## Logging
-
-The application uses `loguru` for logging.
-You can adjust the logging level by modifying the `logger_init` function call in the script.
-
-## Graceful Shutdown
-
-The application handles `SIGTERM` and `SIGINT` signals to ensure a graceful shutdown when the process is terminated.
 
 ## License
 
