@@ -83,31 +83,27 @@ class LocalLanguageModelClient:
 def init_llm_client() -> OpenAI | LocalLanguageModelClient:
     model_type = config.LLM_CONFIG.model_type
     match model_type:
-        case LanguageModelType.HUGGINGFACE():
+        case LanguageModelType.HUGGINGFACE:
             return LocalLanguageModelClient(config.LLM_CONFIG.model_id)
-        case LanguageModelType.OPENAI():
+        case LanguageModelType.OPENAI:
             return OpenAI(
                 api_key=os.getenv("OPENAI_API_KEY"),
             )
-        case LanguageModelType.OLLAMA():
+        case LanguageModelType.OLLAMA:
             return OpenAI(api_key="ollama", base_url=config.LLM_CONFIG.server_url)
+        case _:
+            raise ValueError(f"Unsupported model type: {model_type}")
+
 
 class TextGenerator:
-    """
-    A text generator class that uses a singleton pattern to ensure
-
-    only one instance handles all text generation requests.
-    """
-
     def __init__(self):
         self.client = init_llm_client()
-        self.chat = self.client.chat
 
     def generate_text(
         self, messages, max_tokens: int, temperature: float
     ) -> Iterable[ChatCompletionChunk]:
         completions = self.client.chat.completions.create(
-            model=config.MODEL_ID_LLM,
+            model=config.LLM_CONFIG.model_id,
             messages=messages,
             max_tokens=max_tokens,
             temperature=temperature,
