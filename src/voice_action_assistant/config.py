@@ -1,5 +1,7 @@
+from enum import Enum
 from typing import Tuple, Type
 
+from pydantic import Field
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
@@ -8,18 +10,64 @@ from pydantic_settings import (
 )
 
 
-class Settings(BaseSettings):
-    MODEL_ID: str = "gpt-4-turbo"
-    COPY_TO_CLIPBOARD: bool = True
-    EXTRACT_CODE_BLOCKS: bool = True
-    LOCAL: bool = True
-    MAX_AUDIO_LENGTH_SECONDS: int = 3600
-    USE_TTS: bool = False
-    AUDIO_SPEED: float = 1.25
-    AUDIO_FILES_DIR: str = "src/audio_files"
-    LLM_ACTION_PROMPTS_DIR: str = "src/llm-action-prompts"
-    PASTE_AT_CURSOR: bool = False
+class LanguageModelType(str, Enum):
+    HUGGINGFACE = "huggingface"
+    OLLAMA = "ollama"
+    OPENAI = "openai"
 
+
+# nvim find and replace llm_id with llm_id but case sensitive: %s/llm_id/llm_id/g
+class LanguageModelConfig(BaseSettings):
+    llm_id: str
+    llm_type: LanguageModelType
+    server_url: str | None = Field("http://localhost:11434/v1")
+
+    @classmethod
+    def get_default_huggingface_config(cls):
+        return cls(
+            llm_id="",
+            llm_type=LanguageModelType.HUGGINGFACE,
+            server_url=None,
+        )
+
+    @classmethod
+    def get_default_ollama_config(cls):
+        return cls(
+            llm_id="llama3",
+            llm_type=LanguageModelType.OLLAMA,
+            server_url="http://localhost:11434/v1",
+        )
+
+    @classmethod
+    def get_default_openai_config(cls):
+        return cls(
+            llm_id="gpt-4-turbo",
+            llm_type=LanguageModelType.OPENAI,
+            server_url=None,
+        )
+
+
+class ClipboardConfig(BaseSettings):
+    copy_to_clipboard: bool | None = Field(True)
+    copy_from_code_blocks: bool | None = Field(True)
+    paste_at_cursor: bool | None = Field(True)
+
+    @classmethod
+    def get_default(cls):
+        return cls(
+            copy_to_clipboard=True,
+            copy_from_code_blocks=True,
+            paste_at_cursor=True,
+        )
+
+
+class Settings(BaseSettings):
+    clipboard_config: ClipboardConfig = ClipboardConfig.get_default()
+    llm_config: LanguageModelConfig = LanguageModelConfig.get_default_huggingface_config()
+    max_audio_length_seconds: int = 3600
+    whisper_id: str = "distil-whisper/distil-small.en"
+
+    audio_dir: str = "src/audio_files"
     model_config = SettingsConfigDict(yaml_file="settings_config.yml")
 
     @classmethod
@@ -31,6 +79,8 @@ class Settings(BaseSettings):
         dotenv_settings: PydanticBaseSettingsSource,
         file_secret_settings: PydanticBaseSettingsSource,
     ) -> Tuple[PydanticBaseSettingsSource, ...]:
+        for _ in [init_settings, env_settings, dotenv_settings, file_secret_settings]:
+            pass
         return (YamlConfigSettingsSource(settings_cls),)
 
     def update(self, attr_name: str, new_value):

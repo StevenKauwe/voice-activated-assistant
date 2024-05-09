@@ -1,5 +1,5 @@
-from typing import Optional
 import sys
+from typing import Optional
 
 
 def print_file_contents(filename):

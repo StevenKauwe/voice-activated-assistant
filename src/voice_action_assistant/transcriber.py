@@ -1,3 +1,4 @@
+import os
 import time
 from datetime import datetime
 from typing import Union
@@ -6,12 +7,12 @@ import numpy as np
 import torch
 from dotenv import load_dotenv
 from loguru import logger
+from openai import OpenAI
 from pygame import mixer
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, Pipeline, pipeline
 
 from voice_action_assistant.config import config
 from voice_action_assistant.utils import (
-    init_client,
     load_numpy_from_audio_file,
     remove_trailing_phrase,
     timer_decorator,
@@ -22,6 +23,11 @@ mixer.init()
 load_dotenv()
 
 
+def init_client():
+    openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    return openai_client
+
+
 def init_local_model() -> Pipeline:
     start_time = time.time()
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
@@ -29,7 +35,8 @@ def init_local_model() -> Pipeline:
 
     # model_id = "distil-whisper/distil-large-v2"
     # model_id = "distil-whisper/distil-medium.en"
-    model_id = "distil-whisper/distil-small.en"
+    # model_id = "distil-whisper/distil-small.en"
+    model_id = config.whisper_id
 
     logger.info(f"Loading model: {model_id} on device: {device}")
 
@@ -101,7 +108,7 @@ class STT:
 
 class Transcriber:
     def __init__(self):
-        self.stt = STT(local=config.LOCAL)
+        self.stt = STT()
 
     @timer_decorator
     def transcribe_audio(self, audio: np.ndarray, pre_audio_file: str = ""):

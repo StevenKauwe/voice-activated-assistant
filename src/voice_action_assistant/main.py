@@ -8,8 +8,9 @@ from typing import Dict
 from loguru import logger
 
 # Assuming the existence of Action classes in actions.py
-from voice_action_assistant.actions import Action, ActionFactory
+from voice_action_assistant.actions import Action, ActionFactory, ActionTrascript
 from voice_action_assistant.config import config
+from voice_action_assistant.llm import TextGenerator
 from voice_action_assistant.recorder import AudioDetector, AudioRecorder
 from voice_action_assistant.transcriber import Transcriber
 from voice_action_assistant.utils import load_config_yml, play_sound, transcript_contains_phrase
@@ -19,7 +20,7 @@ threading.Thread(
     target=play_sound,
     args=(
         os.path.join(
-            config.AUDIO_FILES_DIR,
+            config.audio_dir,
             "startup-audio.wav",
         ),
     ),
@@ -49,7 +50,7 @@ class ActionController:
         for action_name, action in self.actions.items():
             logger.debug(f"Checking phrase: {action.phrase} in transcription: {transcription}")
             if transcript_contains_phrase(transcription, action.phrase):
-                response = action.perform(transcription)
+                response = action.perform(ActionTrascript(transcript=transcription))
                 if response.success:
                     return action_name
         return None
@@ -60,6 +61,7 @@ class VoiceControlledRecorder:
         self.wake_audio_recorder = AudioRecorder("wake phrase recorder", max_seconds=3)
         self.recorder = AudioRecorder()
         self.transcriber = Transcriber()
+        self.text_generator = TextGenerator()
         self.audio_detector = AudioDetector(self.wake_audio_recorder, self.transcriber)
         self.action_controller = ActionController()
         self.action_factory = ActionFactory()
@@ -68,7 +70,9 @@ class VoiceControlledRecorder:
         actions_config = load_config_yml(yaml_file)
 
         for action_config in actions_config["actions"]:
-            action = self.action_factory.get_action(action_config, self.recorder, self.transcriber)
+            action = self.action_factory.get_action(
+                action_config, self.recorder, self.transcriber, self.text_generator
+            )
             if action:
                 self.action_controller.register_action(action)
             else:
@@ -102,7 +106,7 @@ def main():
 
 
 def exit_program():
-    play_sound(os.path.join(config.AUDIO_FILES_DIR, "shutdown-audio.wav"))
+    play_sound(os.path.join(config.audio_dir, "shutdown-audio.wav"))
     sys.exit()
 
 
