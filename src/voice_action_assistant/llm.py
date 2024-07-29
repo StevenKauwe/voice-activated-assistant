@@ -9,7 +9,7 @@ from openai import OpenAI
 from openai.types.chat.chat_completion_chunk import ChatCompletionChunk, Choice, ChoiceDelta
 from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
 
-from voice_action_assistant.config import config, LanguageModelType
+from voice_action_assistant.config import LanguageModelType, config
 
 
 class LocalCompletions:

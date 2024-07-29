@@ -10,10 +10,17 @@ from pydantic import BaseModel
 
 from voice_action_assistant.config import config
 from voice_action_assistant.llm import TextGenerator
+from voice_action_assistant.memory_manager import (
+    MemoryManager,
+    memory_index_manager,
+    query_memories,
+    save_transcript,
+)
 from voice_action_assistant.recorder import AudioRecorder
 from voice_action_assistant.transcriber import Transcriber
 from voice_action_assistant.utils import (
     ColorEnum,
+    color_print,
     color_text,
     load_config_yml,
     optional_copy_to_clipboard,
@@ -157,6 +164,10 @@ class TranscribeAction(Action):
         self.audio_recorder.save_recording("output.mp3")
         return cleaned_transcript
 
+    @property
+    def name(self):
+        return self.action_name or self.__class__.__name__
+
 
 class TranscribeAndSaveTextAction(TranscribeAction):
     def __init__(
@@ -190,15 +201,12 @@ class TranscribeAndSaveTextAction(TranscribeAction):
             cleaned_transcript = self._clean_and_save_transcript(transcript)
             optional_copy_to_clipboard(cleaned_transcript)
             optional_paste_at_cursor()
-            logger.info(f"Processed Transcript: {transcript}")
+            logger.info("Processed Transcript")
+            color_print(transcript, color=ColorEnum.TRANSCRIPT)
             play_sound(os.path.join(config.audio_dir, "action-complete-audio.wav"))
             return TranscribeActionResponse(success=True, action=self)
         else:
             return TranscribeActionResponse(success=False, action=self)
-
-    @property
-    def name(self):
-        return self.action_name or self.__class__.__name__
 
 
 class TalkToLanguageModelAction(TranscribeAction):
@@ -291,12 +299,10 @@ class TalkToLanguageModelAction(TranscribeAction):
         else:
             return TranscribeActionResponse(success=False, action=self)
 
-    @property
-    def name(self):
-        return self.action_name or self.__class__.__name__
-
 
 class AssistantSettingsAction(TranscribeAction):
+    action_name = "AssistantSettingsAction"
+
     def __init__(
         self,
         start_action_phrase: str,
@@ -359,22 +365,181 @@ class AssistantSettingsAction(TranscribeAction):
             if "VIEW_SETTINGS" in response_text:
                 # Print current settings
                 current_settings = {attr: getattr(config, attr) for attr in config_attributes}
-                print("Current Settings:", json.dumps(current_settings, indent=4))
+                color_print(
+                    f"Current Settings: {json.dumps(current_settings, indent=4)}",
+                    ColorEnum.SETTINGS,
+                )
                 return TranscribeActionResponse(self, True)
             elif "```json" in response_text:
                 response_text = response_text.split("```json")[1].split("```")[0]
                 response_json = json.loads(response_text)
                 for key, value in response_json.items():
                     config.update(key, value)
+                color_print(
+                    f"Settings Updated: {json.dumps(response_json, indent=4)}",
+                    color=ColorEnum.SETTINGS,
+                )
                 return TranscribeActionResponse(self, True)
             return TranscribeActionResponse(self, False)
         except Exception as e:
             logger.error(e)
             return TranscribeActionResponse(self, False)
 
-    @property
-    def name(self):
-        return self.__class__.__name__
+
+class MemoryStorageAction(TranscribeAction):
+    def _action_logic(
+        self, transcription_response: TranscribeActionResponse
+    ) -> TranscribeActionResponse:
+        if transcription_response.success:
+            transcript = transcription_response.transcript
+            cleaned_transcript = self._clean_and_save_transcript(transcript)
+            use_clipboard = "use_clipboard" in self.system_message
+
+            if "use_llm_summarizer" in self.system_message:
+                # Use LLM to summarize the memory
+                system_prompt = dedent(
+                    f"""\
+                    Clean up and refactor the memory.
+                    Ignore the clipboard content if it is not relevant.
+                    
+                    [user clipboard]
+                    {pyperclip.paste()}
+                    """
+                )
+                completion = self.text_generator.generate_text(
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": f"{cleaned_transcript}"},
+                    ],
+                    max_tokens=1024,
+                    temperature=0.1,
+                )
+                response_text = ""
+                color_print("----- Memory Summary Started -----", ColorEnum.SYSTEM)
+                for chunk in completion:
+                    str_delta = chunk.choices[0].delta.content
+                    if str_delta:
+                        response_text += str_delta
+                        color_print(str_delta, ColorEnum.GPT_RESPONSE, end="")
+                color_print("\n----- Memory Summary Finished -----", ColorEnum.SYSTEM)
+                cleaned_transcript = response_text
+                use_clipboard = False
+
+            save_transcript(cleaned_transcript, include_clipboard=use_clipboard)
+
+            color_print(
+                f"{ColorEnum.SAVED_MEMORY.value.upper()}: {cleaned_transcript}",
+                color=ColorEnum.SAVED_MEMORY,
+            )
+            return TranscribeActionResponse(success=True, action=self)
+        else:
+            return TranscribeActionResponse(success=False, action=self)
+
+
+class MemoryAugmentedQAAction(TranscribeAction):
+    def _action_logic(
+        self, transcription_response: TranscribeActionResponse
+    ) -> TranscribeActionResponse:
+        if transcription_response.success:
+            transcript = transcription_response.transcript
+            cleaned_transcript = self._clean_and_save_transcript(transcript)
+            formatted_memories = query_memories(cleaned_transcript)
+            color_print("RETRIEVED_MEMORY:", ColorEnum.RETRIEVED_MEMORY)
+            color_print(formatted_memories, ColorEnum.RETRIEVED_MEMORY)
+
+            prompt = f"Context:\n{formatted_memories}\n\nQuestion: {cleaned_transcript}\n\nAnswer:"
+
+            response = self.text_generator.generate_text(
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are a helpful assistant with access to stored memories. Use the provided context to answer the question.",
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+                max_tokens=1000,
+                temperature=0.7,
+            )
+
+            response_text = ""
+            color_print("----- Memory-augmented Response Started -----", ColorEnum.SYSTEM)
+            for chunk in response:
+                str_delta = chunk.choices[0].delta.content
+                if str_delta:
+                    response_text += str_delta
+                    color_print(str_delta, ColorEnum.GPT_RESPONSE, end="")
+            color_print("\n----- Memory-augmented Response Finished -----", ColorEnum.SYSTEM)
+
+            optional_copy_to_clipboard(cleaned_transcript)
+            optional_paste_at_cursor()
+            logger.info(f"Processed Transcript: {transcript}")
+            play_sound(os.path.join(config.audio_dir, "action-complete-audio.wav"))
+            return TranscribeActionResponse(success=True, action=self)
+        else:
+            return TranscribeActionResponse(success=False, action=self)
+
+
+class ShowMemoriesAction(TranscribeAction):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.memory_manager = MemoryManager()
+
+    def _action_logic(
+        self, transcription_response: TranscribeActionResponse
+    ) -> TranscribeActionResponse:
+        if not transcription_response.success:
+            return TranscribeActionResponse(success=False, action=self)
+
+        cleaned_transcript = self._clean_and_save_transcript(transcription_response.transcript)
+        memories = self.memory_manager.query_memories(cleaned_transcript, n_results=5)
+        memory_index_manager.index_memories(memories)
+
+        color_print("Relevant memories:", ColorEnum.SYSTEM)
+        for result in memory_index_manager.current_results:
+            color_print(f"{result['animal_name']}:", ColorEnum.RETRIEVED_MEMORY)
+            color_print(f"  {result['content'][:100]}...", ColorEnum.RETRIEVED_MEMORY)
+
+        return TranscribeActionResponse(success=True, action=self)
+
+
+class DeleteMemoriesAction(TranscribeAction):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.memory_manager = MemoryManager()
+
+    def _action_logic(
+        self, transcription_response: TranscribeActionResponse
+    ) -> TranscribeActionResponse:
+        if not transcription_response.success:
+            return TranscribeActionResponse(success=False, action=self)
+
+        cleaned_transcript = self._clean_and_save_transcript(transcription_response.transcript)
+        animal_names_to_delete = [
+            name
+            for name in memory_index_manager.animal_names
+            if name.lower() in cleaned_transcript.lower()
+        ]
+
+        if not animal_names_to_delete:
+            color_print(
+                "No valid animal names found in the delete command.", ColorEnum.DELETE_MEMORY
+            )
+            return TranscribeActionResponse(success=False, action=self)
+
+        for animal_name in animal_names_to_delete:
+            memory_to_delete = memory_index_manager.get_memory_by_animal(animal_name)
+            if memory_to_delete:
+                self.memory_manager.delete_memory(memory_to_delete["id"])
+                color_print(f"Deleted memory: {animal_name}", ColorEnum.DELETE_MEMORY)
+                memory_index_manager.current_results = [
+                    r
+                    for r in memory_index_manager.current_results
+                    if r["animal_name"] != animal_name
+                ]
+            else:
+                color_print(f"No memory found for {animal_name}", ColorEnum.DELETE_MEMORY)
+
+        return TranscribeActionResponse(success=True, action=self)
 
 
 class ActionFactory:
@@ -383,6 +548,10 @@ class ActionFactory:
             "TalkToLanguageModelAction": TalkToLanguageModelAction,
             "TranscribeAndSaveTextAction": TranscribeAndSaveTextAction,
             "AssistantSettingsAction": AssistantSettingsAction,
+            "MemoryStorageAction": MemoryStorageAction,
+            "MemoryAugmentedQAAction": MemoryAugmentedQAAction,
+            "ShowMemoriesAction": ShowMemoriesAction,
+            "DeleteMemoriesAction": DeleteMemoriesAction,
         }
         self.loaded_actions = []
 

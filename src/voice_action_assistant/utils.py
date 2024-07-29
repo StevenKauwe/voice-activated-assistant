@@ -3,7 +3,7 @@ import re
 import sys
 import time
 from collections import deque
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from textwrap import dedent
 from threading import Lock
@@ -230,14 +230,28 @@ def stt_audio_file(file_name: str, stt_client: OpenAI) -> str:
     return transcript_text
 
 
-class ColorEnum(str, Enum):
+class ColorEnum(StrEnum):
     RED = "\033[91m"
     GREEN = "\033[92m"
     YELLOW = "\033[93m"
     BLUE = "\033[94m"
     MAGENTA = "\033[95m"
     CYAN = "\033[96m"
+    WHITE = "\033[97m"
     RESET = "\033[0m"
+
+    TRANSCRIPT = YELLOW
+    GPT_RESPONSE = GREEN
+    SAVED_MEMORY = BLUE
+    DELETE_MEMORY = RED
+    RETRIEVED_MEMORY = MAGENTA
+    SETTINGS = CYAN
+    SYSTEM = WHITE
+
+
+def color_print(text: str, color: ColorEnum = ColorEnum.WHITE, end: str = "\n") -> None:
+    sys.stdout.write(f"{color.value}{text}{ColorEnum.RESET.value}{end}")
+    sys.stdout.flush()
 
 
 def color_text(text: str, color: ColorEnum) -> str:

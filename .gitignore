@@ -160,3 +160,4 @@ live_response.md
 *.lock
 actions_config.yml
 settings_config.yml
+.voice_assistant_memories/

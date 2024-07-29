@@ -44,6 +44,7 @@ class ActionController:
         self.actions: Dict[str, Action] = {}
 
     def register_action(self, action: Action):
+        logger.info(f"Registering action: {action}\nName: {action.name}")
         self.actions[action.name] = action
 
     def check_and_perform_actions(self, transcription: str):

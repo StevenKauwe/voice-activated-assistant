@@ -2,7 +2,9 @@ import numpy as np
 from scipy.io.wavfile import write
 
 
-def generate_ping_sound(start_frequency, end_frequency, duration, sample_rate=44100):
+def generate_ping_sound(
+    start_frequency, end_frequency, duration, sample_rate=44100, amplitude=0.08
+):
     # Generate time array
     t = np.linspace(0, duration, int(duration * sample_rate), False)
 
@@ -13,7 +15,6 @@ def generate_ping_sound(start_frequency, end_frequency, duration, sample_rate=44
     note = np.sin(2 * np.pi * frequency * t)
 
     # Reduce loudness
-    amplitude = 0.125  # Reduce amplitude to 50% for lower volume
     audio = note * amplitude * (2**15 - 1) / np.max(np.abs(note))
     audio = audio.astype(np.int16)
 
@@ -73,7 +74,7 @@ def generate_bell_sound(frequencies, decay_rates, duration, sample_rate=44100):
     return audio
 
 
-def bell_correct_audio(frequencies, decay_rates, duration, amplitude=0.15):
+def bell_correct_audio(frequencies, decay_rates, duration, amplitude=0.08):
     audio = generate_bell_sound(frequencies, decay_rates, duration)
 
     # Reduce loudness
@@ -82,7 +83,7 @@ def bell_correct_audio(frequencies, decay_rates, duration, amplitude=0.15):
     return audio
 
 
-def generate_sound_from_function(func, length, duration, sample_rate=44100):
+def generate_sound_from_function(func, length, duration, sample_rate=44100, amplitude=0.08):
     # Generate sequence from function
     sequence = np.array([func(i) for i in range(length)], dtype=float)
 
@@ -109,7 +110,6 @@ def generate_sound_from_function(func, length, duration, sample_rate=44100):
     audio = np.concatenate((audio, ding_audio))
 
     # Reduce loudness
-    amplitude = 0.5  # Reduce amplitude to 50% for lower volume
     audio = audio * amplitude * (2**15 - 1) / np.max(np.abs(audio))
     audio = audio.astype(np.int16)
 

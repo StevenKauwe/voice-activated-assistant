@@ -16,7 +16,6 @@ class LanguageModelType(str, Enum):
     OPENAI = "openai"
 
 
-# nvim find and replace llm_id with llm_id but case sensitive: %s/llm_id/llm_id/g
 class LanguageModelConfig(BaseSettings):
     llm_id: str
     llm_type: LanguageModelType

@@ -1,29 +1,30 @@
 [project]
 name = "voice-action-assistant"
-version = "0.1.0"
+version = "0.2.0"
 description = "Add your description here"
 dependencies = [
-  "accelerate",
-  "bitsandbytes",
-  "huggingface_hub",
-  "keyboard",
-  "loguru",
-  "numpy",
-  "openai",
-  "openai-whisper",
-  "pyautogui",
-  "pydantic",
-  "pydantic-settings",
-  "pydub",
-  "pygame",
-  "pyperclip",
-  "python-dotenv",
-  "PyYAML",
-  "scipy",
-  "sounddevice",
-  "torch",
-  "torchaudio",
-  "transformers",
+    "accelerate",
+    "bitsandbytes",
+    "huggingface_hub",
+    "keyboard",
+    "loguru",
+    "numpy",
+    "openai",
+    "openai-whisper",
+    "pyautogui",
+    "pydantic",
+    "pydantic-settings",
+    "pydub",
+    "pygame",
+    "pyperclip",
+    "python-dotenv",
+    "PyYAML",
+    "scipy",
+    "sounddevice",
+    "torch",
+    "torchaudio",
+    "transformers",
+    "chromadb>=0.5.5",
 ]
 readme = "README.md"
 requires-python = ">= 3.12"
@@ -39,10 +40,6 @@ build-backend = "hatchling.build"
 [tool.rye]
 managed = true
 dev-dependencies = ["ruff"]
-
-[[tool.rye.sources]]
-name = "pytorch"
-url = "https://download.pytorch.org/whl/cu121"
 
 [tool.hatch.metadata]
 allow-direct-references = true
